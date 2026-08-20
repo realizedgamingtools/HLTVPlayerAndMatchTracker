@@ -52,10 +52,12 @@
     /** Storage keys. Preferences sync, delivery state stays local. */
     SYNC_KEY_SETTINGS: 'settings',
     SYNC_KEY_FOLLOWED_TEAMS: 'followedTeams',
+    SYNC_KEY_FOLLOWED_PLAYERS: 'followedPlayers',
     SYNC_KEY_MATCH_RULES: 'matchRules',
     LOCAL_KEY_SENT_ALERTS: 'sentAlerts',
     LOCAL_KEY_LAST_SCAN: 'lastScan',
     LOCAL_KEY_STREAM_SNAPSHOTS: 'streamSnapshots',
+    LOCAL_KEY_LIVE_CHANNELS: 'liveChannels',
     SESSION_KEY_NOTIFICATION_TARGETS: 'notificationTargets',
 
     /** Alert statuses emitted by the alert core. */
@@ -63,6 +65,9 @@
     STATUS_STARTING_SOON: 'starting-soon',
     STATUS_SCHEDULED: 'scheduled',
     STATUS_PAST: 'past',
+
+    /** A followed player's own channel coming online. */
+    STATUS_STREAM_LIVE: 'stream-live',
 
     /** Runtime message types. */
     MSG_DESKTOP_NOTIFY: 'hta:desktop-notify',
@@ -105,6 +110,34 @@
 
   HTA.defaultMatchRule = emptyOverride;
   HTA.defaultTeamRule = emptyOverride;
+
+  /**
+   * A followed player.
+   *
+   * `alertOnMatch` and `alertOnStream` are separate interests, not one switch:
+   * wanting to know when someone streams is not the same as wanting every
+   * fixture their team plays. Both start on -- following a player is itself
+   * the opt-in -- and either can be switched off from their profile.
+   */
+  HTA.defaultFollowedPlayer = function defaultFollowedPlayer(fields) {
+    return Object.assign(
+      {
+        id: null,
+        nickname: '',
+        realname: null,
+        slug: null,
+        teamId: null,
+        teamName: null,
+        channels: [],
+        followedAt: null,
+        alertOnMatch: true,
+        alertOnStream: true,
+        openStreamOnLive: null
+      },
+      emptyOverride(),
+      fields || {}
+    );
+  };
 
   /**
    * A followed team.

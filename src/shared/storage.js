@@ -76,6 +76,43 @@
     await sync.set({ [C.SYNC_KEY_FOLLOWED_TEAMS]: teams });
   }
 
+  /** Followed players. User-authored and small, so they sync. */
+  async function getFollowedPlayers() {
+    const sync = area('sync');
+    if (!sync) return {};
+    const stored = await sync.get(C.SYNC_KEY_FOLLOWED_PLAYERS);
+    return (stored && stored[C.SYNC_KEY_FOLLOWED_PLAYERS]) || {};
+  }
+
+  async function saveFollowedPlayers(players) {
+    const sync = area('sync');
+    if (!sync) return;
+    await sync.set({ [C.SYNC_KEY_FOLLOWED_PLAYERS]: players });
+  }
+
+  /**
+   * Channel keys seen live on the previous scan.
+   *
+   * Personal-stream alerts fire on the offline -> live transition, so the
+   * previous set has to outlive a service-worker restart. Returns null when
+   * nothing has been recorded yet, which the transition detector treats as
+   * "no baseline" rather than "nothing was live".
+   */
+  async function getLiveChannels() {
+    const local = area('local');
+    if (!local) return null;
+    const stored = await local.get(C.LOCAL_KEY_LIVE_CHANNELS);
+    const record = stored && stored[C.LOCAL_KEY_LIVE_CHANNELS];
+    if (!record || !Array.isArray(record.keys)) return null;
+    return new Set(record.keys);
+  }
+
+  async function saveLiveChannels(keys, now) {
+    const local = area('local');
+    if (!local) return;
+    await local.set({ [C.LOCAL_KEY_LIVE_CHANNELS]: { keys: Array.from(keys), at: now } });
+  }
+
   /** Per-match overrides. Small and user-authored, so they sync. */
   async function getMatchRules() {
     const sync = area('sync');
@@ -172,6 +209,10 @@
     saveSentAlerts,
     getFollowedTeams,
     saveFollowedTeams,
+    getFollowedPlayers,
+    saveFollowedPlayers,
+    getLiveChannels,
+    saveLiveChannels,
     getMatchRules,
     saveMatchRules,
     getStreamSnapshot,

@@ -22,6 +22,8 @@ const MODULES = [
   'src/core/status.js',
   'src/core/matching.js',
   'src/core/teams.js',
+  'src/core/streamers.js',
+  'src/core/players.js',
   'src/core/rules.js',
   'src/core/alerts.js',
   'src/core/parser.js',
@@ -807,6 +809,180 @@ test('team rules drive the alert core', () => {
     sentAlerts: {}
   });
   assertEqual(legacy.alerts.length, 1, 'v1 name list still works before migration');
+});
+
+/* --------------------------------------------------- 14. live streamer feed */
+
+test('parses the live streams sidebar and detects going-live transitions', () => {
+  // Shape captured from HLTV on 2026-08-20. Every page carries this sidebar,
+  // ~160 entries split CASTER / STREAMER / ORGANIZER.
+  const html = [
+    '<div class="streams-section"><div class="streams-list">',
+    '<div class="streams-stream"',
+    ' data-frontpage-stream-title="chopper"',
+    ' data-frontpage-stream-viewers="33545"',
+    ' data-frontpage-stream-type="STREAMER"',
+    ' data-frontpage-stream-flag-name="Russia"',
+    ' data-frontpage-stream-embed-src="https://player.twitch.tv/?channel=chopperinho&autoplay=true&parent=www.hltv.org"></div>',
+    '<div class="streams-stream"',
+    ' data-frontpage-stream-title="gaules"',
+    ' data-frontpage-stream-viewers="74689"',
+    ' data-frontpage-stream-type="CASTER"',
+    ' data-frontpage-stream-flag-name="Brazil"',
+    ' data-frontpage-stream-embed-src="https://player.kick.com/gaules?autoplay=true"></div>',
+    '<div class="streams-stream"',
+    ' data-frontpage-stream-title="ESL"',
+    ' data-frontpage-stream-viewers="-"',
+    ' data-frontpage-stream-type="ORGANIZER"',
+    ' data-frontpage-stream-embed-src="https://www.youtube.com/embed/abc123?autoplay=1"></div>',
+    '</div></div>'
+  ].join('');
+
+  const live = HTA.streamers.parseLiveStreams(parseHTML(html));
+  // The YouTube entry embeds by video id, which carries no stable channel
+  // identity, so it cannot be matched to a followed player and is dropped.
+  assertEqual(live.length, 2, 'entries with a resolvable channel are kept');
+
+  const chopper = live.find((s) => s.platform === 'twitch');
+  assertEqual(chopper.channel, 'chopperinho', 'channel comes from the embed URL');
+  assertEqual(chopper.title, 'chopper', 'display label kept separately');
+  assertEqual(chopper.viewers, 33545, 'viewers parsed');
+  assertEqual(chopper.type, 'STREAMER', 'category preserved');
+  assertEqual(chopper.country, 'Russia', 'country preserved');
+
+  // The whole reason matching uses the channel and not the label.
+  assert(chopper.title !== chopper.channel, 'label and channel genuinely differ');
+
+  assertEqual(live.find((s) => s.platform === 'kick').channel, 'gaules', 'kick channel');
+  assertEqual(HTA.streamers.parseLiveStreams(parseHTML('<div></div>')).length, 0, 'no sidebar');
+
+  // -- channel identity ----------------------------------------------------
+  const from = HTA.streamers.channelFromUrl;
+  assertEqual(from('https://www.twitch.tv/s1mple').channel, 's1mple', 'twitch watch page');
+  assertEqual(from('https://www.twitch.tv/S1mple').channel, 's1mple', 'channel is case-folded');
+  assertEqual(from('https://kick.com/gaules').platform, 'kick', 'kick watch page');
+  assertEqual(from('https://www.youtube.com/@someone').channel, 'someone', 'youtube handle');
+  assertEqual(from('https://www.instagram.com/s1mpleo'), null, 'non-broadcast social ignored');
+  assertEqual(from('https://www.twitch.tv/directory'), null, 'twitch section is not a channel');
+  assertEqual(from(''), null, 'empty input');
+
+  // -- transition detection ------------------------------------------------
+  const keyOf = HTA.streamers.channelKey;
+  const current = HTA.streamers.liveChannelKeys(live);
+  assert(current.has(keyOf('twitch', 'chopperinho')), 'live set holds the channel key');
+
+  const previous = new Set([keyOf('kick', 'gaules')]);
+  const fresh = HTA.streamers.newlyLive(previous, current);
+  assertEqual(fresh.size, 1, 'only the newly live channel');
+  assert(fresh.has(keyOf('twitch', 'chopperinho')), 'the right one');
+
+  // A stream stays live for hours; it must not re-alert on every scan.
+  assertEqual(HTA.streamers.newlyLive(current, current).size, 0, 'still-live is not newly live');
+
+  // No baseline means no alerts: on a first scan everything looks newly live,
+  // and opening a pile of stream windows on startup is the worst first run.
+  assertEqual(HTA.streamers.newlyLive(null, current).size, 0, 'unknown baseline stays silent');
+
+  assertEqual(
+    HTA.streamers.watchUrl({ platform: 'twitch', channel: 'chopperinho' }),
+    'https://www.twitch.tv/chopperinho',
+    'watch URL rebuilt from channel'
+  );
+});
+
+/* ------------------------------------------------------ 15. followed players */
+
+test('following a player captures identity, team and personal channels', () => {
+  const now = 1700000000000;
+
+  // Exactly what the profile page yields: id and slug from the URL, nickname
+  // and real name from the header, team from the info row, and social links
+  // that mix broadcast and non-broadcast platforms.
+  let players = HTA.players.followPlayer(
+    {},
+    {
+      id: '7998',
+      nickname: 's1mple',
+      realname: 'Oleksandr Kostyliev',
+      slug: 's1mple',
+      teamId: '12376',
+      teamName: 'BC.Game',
+      channelUrls: [
+        'https://www.twitter.com/i/user/2814979514',
+        'https://www.twitch.tv/s1mple',
+        'https://www.instagram.com/s1mpleo'
+      ]
+    },
+    now
+  );
+
+  const s1mple = HTA.players.listPlayers(players)[0];
+  assertEqual(s1mple.id, '7998', 'stable id captured');
+  assertEqual(s1mple.realname, 'Oleksandr Kostyliev', 'real name captured');
+  assertEqual(s1mple.teamName, 'BC.Game', 'current team captured');
+  assertEqual(s1mple.channels.length, 1, 'only broadcast platforms are kept');
+  assertEqual(s1mple.channels[0].channel, 's1mple', 'twitch channel extracted');
+  assert(s1mple.alertOnMatch && s1mple.alertOnStream, 'both interests start on');
+
+  assert(HTA.players.isFollowed(players, { id: '7998' }), 'followed by id');
+  assert(HTA.players.isFollowed(players, { nickname: 'S1MPLE' }), 'and by nickname, case-folded');
+  assert(!HTA.players.isFollowed(players, { id: '1' }), 'someone else is not followed');
+
+  // A transfer must not keep firing alerts for the roster they left.
+  players = HTA.players.followPlayer(
+    players,
+    {
+      id: '7998',
+      nickname: 's1mple',
+      teamId: '4608',
+      teamName: 'Natus Vincere',
+      channelUrls: ['https://www.twitch.tv/s1mple']
+    },
+    now + 1000
+  );
+  assertEqual(Object.keys(players).length, 1, 'refreshed in place, not duplicated');
+  assertEqual(HTA.players.listPlayers(players)[0].teamName, 'Natus Vincere', 'team updated');
+  assertEqual(HTA.players.listPlayers(players)[0].followedAt, now, 'original follow time kept');
+
+  // Preferences survive a refresh.
+  players = HTA.players.setPlayerRule(players, { id: '7998' }, { alertOnMatch: false });
+  players = HTA.players.followPlayer(
+    players,
+    { id: '7998', nickname: 's1mple', teamName: 'Natus Vincere', channelUrls: [] },
+    now + 2000
+  );
+  assertEqual(HTA.players.listPlayers(players)[0].alertOnMatch, false, 'preference preserved');
+  assertEqual(
+    HTA.players.listPlayers(players)[0].channels.length,
+    1,
+    'a profile with no links does not wipe known channels'
+  );
+
+  // Match watching follows the player's team, and respects the switch.
+  assertEqual(HTA.players.teamNamesToWatch(players).length, 0, 'match alerts off: no team watched');
+  players = HTA.players.setPlayerRule(players, { id: '7998' }, { alertOnMatch: true });
+  assertEqual(HTA.players.teamNamesToWatch(players)[0], 'Natus Vincere', 'watches their team');
+
+  // -- going live ----------------------------------------------------------
+  const liveStreams = [
+    { platform: 'twitch', channel: 's1mple', title: 's1mple', viewers: 42000, type: 'STREAMER' }
+  ];
+  const fresh = new Set([HTA.streamers.channelKey('twitch', 's1mple')]);
+
+  const going = HTA.players.playersGoingLive(players, fresh, liveStreams);
+  assertEqual(going.length, 1, 'followed player going live is detected');
+  assertEqual(going[0].player.nickname, 's1mple', 'names the player');
+  assertEqual(going[0].stream.viewers, 42000, 'carries the live stream detail');
+
+  players = HTA.players.setPlayerRule(players, { id: '7998' }, { alertOnStream: false });
+  assertEqual(
+    HTA.players.playersGoingLive(players, fresh, liveStreams).length,
+    0,
+    'stream alerts switch off without touching match alerts'
+  );
+
+  players = HTA.players.unfollowPlayer(players, { id: '7998' });
+  assertEqual(Object.keys(players).length, 0, 'unfollowed');
 });
 
 /* ----------------------------------------------------------------- report */
