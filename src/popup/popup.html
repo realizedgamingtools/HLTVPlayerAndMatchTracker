@@ -61,11 +61,44 @@
         <p class="hint" id="channel-hint" role="status" aria-live="polite"></p>
       </section>
 
+      <section class="section" aria-labelledby="stream-heading">
+        <h2 class="section__heading" id="stream-heading">Live stream</h2>
+
+        <label class="check">
+          <input type="checkbox" id="open-stream" />
+          <span>Pop the stream open when a followed team goes live</span>
+        </label>
+
+        <div class="field">
+          <label class="field__label" for="stream-platform">Preferred platform</label>
+          <select id="stream-platform" class="field__select"></select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="stream-country">Preferred language</label>
+          <select id="stream-country" class="field__select"></select>
+        </div>
+
+        <p class="hint">
+          Preferences, not filters: if nobody is broadcasting on your pick, the
+          biggest available stream opens instead. Set any match individually on
+          its own HLTV page.
+        </p>
+
+        <ul class="team-list" id="rule-list"></ul>
+        <p class="empty" id="rule-empty" hidden>No individual matches customised.</p>
+      </section>
+
       <section class="section" aria-labelledby="status-heading">
         <h2 class="section__heading" id="status-heading">Status</h2>
         <dl class="status" id="status-list"></dl>
         <button type="button" class="button button--wide" id="scan-now">Scan now</button>
         <p class="hint" id="scan-hint" role="status" aria-live="polite"></p>
+
+        <button type="button" class="button button--wide" id="test-alert">
+          Send a test alert
+        </button>
+        <p class="hint" id="test-hint" role="status" aria-live="polite"></p>
       </section>
     </main>
 
@@ -80,6 +113,8 @@
     <script src="../shared/storage.js"></script>
     <script src="../core/normalize.js"></script>
     <script src="../core/matching.js"></script>
+    <script src="../core/rules.js"></script>
+    <script src="../core/streams.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

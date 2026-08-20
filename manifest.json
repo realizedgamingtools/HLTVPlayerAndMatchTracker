@@ -1,10 +1,13 @@
 {
   "manifest_version": 3,
   "name": "HLTV Team Alert",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Get notified when the Counter-Strike teams you follow go live or are about to play on HLTV.",
   "minimum_chrome_version": "102",
-  "permissions": ["storage", "notifications"],
+  "permissions": [
+    "storage",
+    "notifications"
+  ],
   "background": {
     "service_worker": "src/background/service-worker.js"
   },
@@ -24,19 +27,42 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.hltv.org/*"],
+      "matches": [
+        "https://www.hltv.org/*"
+      ],
       "js": [
         "src/shared/constants.js",
         "src/shared/storage.js",
         "src/core/normalize.js",
         "src/core/status.js",
         "src/core/matching.js",
+        "src/core/rules.js",
         "src/core/alerts.js",
         "src/core/parser.js",
+        "src/core/streams.js",
         "src/content/notifier.js",
         "src/content/content.js"
       ],
-      "css": ["src/content/toast.css"],
+      "css": [
+        "src/content/toast.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.hltv.org/matches/*"
+      ],
+      "js": [
+        "src/shared/constants.js",
+        "src/shared/storage.js",
+        "src/core/normalize.js",
+        "src/core/rules.js",
+        "src/core/streams.js",
+        "src/content/match-page.js"
+      ],
+      "css": [
+        "src/content/match-panel.css"
+      ],
       "run_at": "document_idle"
     }
   ]

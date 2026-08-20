@@ -22,12 +22,20 @@
     pageAlerts: document.getElementById('page-alerts'),
     desktopAlerts: document.getElementById('desktop-alerts'),
     channelHint: document.getElementById('channel-hint'),
+    openStream: document.getElementById('open-stream'),
+    streamPlatform: document.getElementById('stream-platform'),
+    streamCountry: document.getElementById('stream-country'),
+    ruleList: document.getElementById('rule-list'),
+    ruleEmpty: document.getElementById('rule-empty'),
     statusList: document.getElementById('status-list'),
     scanNow: document.getElementById('scan-now'),
-    scanHint: document.getElementById('scan-hint')
+    scanHint: document.getElementById('scan-hint'),
+    testAlert: document.getElementById('test-alert'),
+    testHint: document.getElementById('test-hint')
   };
 
   let settings = HTA.defaultSettings();
+  let matchRules = {};
 
   /* ------------------------------------------------------------ rendering */
 
@@ -65,10 +73,87 @@
     for (const minutes of C.LEAD_TIME_CHOICES) {
       const option = document.createElement('option');
       option.value = String(minutes);
-      option.textContent = minutes >= 60 ? '1 hour' : `${minutes} minutes`;
+      option.textContent =
+        minutes === 0 ? 'Only once it is live' : minutes >= 60 ? '1 hour' : `${minutes} minutes`;
       el.leadTime.appendChild(option);
     }
     el.leadTime.value = String(settings.leadTimeMinutes);
+  }
+
+  /**
+   * Platform and language menus.
+   *
+   * The global menus cannot know which streams exist -- that is only knowable
+   * on a match page -- so they list the platforms the extension understands and
+   * whatever languages the user has already pinned somewhere. Anything more
+   * specific belongs on the match page itself.
+   */
+  function renderStreamPrefs() {
+    el.openStream.checked = settings.openStream === true;
+
+    el.streamPlatform.replaceChildren();
+    for (const [value, label] of [[C.ANY, 'Any platform']].concat(
+      C.STREAM_PLATFORMS.map((p) => [p, p === 'hltv' ? 'HLTV Live' : p[0].toUpperCase() + p.slice(1)])
+    )) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      el.streamPlatform.appendChild(option);
+    }
+    el.streamPlatform.value = settings.streamPlatform || C.ANY;
+
+    el.streamCountry.replaceChildren();
+    const pinned = new Set(
+      Object.values(matchRules)
+        .map((rule) => rule && rule.streamCountry)
+        .filter((c) => typeof c === 'string' && c !== C.ANY)
+    );
+    if (settings.streamCountry && settings.streamCountry !== C.ANY) {
+      pinned.add(settings.streamCountry);
+    }
+    for (const [value, label] of [[C.ANY, 'Any language']].concat(
+      Array.from(pinned).sort((a, b) => a.localeCompare(b)).map((c) => [c, c])
+    )) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      el.streamCountry.appendChild(option);
+    }
+    el.streamCountry.value = settings.streamCountry || C.ANY;
+  }
+
+  /** Matches the user has customised individually, with a way to undo. */
+  function renderMatchRules() {
+    el.ruleList.replaceChildren();
+    const ids = Object.keys(matchRules);
+    el.ruleEmpty.hidden = ids.length > 0;
+
+    for (const matchId of ids) {
+      const resolved = HTA.rules.resolveMatchRule(settings, matchRules, matchId);
+      const item = document.createElement('li');
+      item.className = 'team-list__item';
+
+      const name = document.createElement('span');
+      name.className = 'team-list__name';
+      name.textContent = `Match ${matchId} — ${resolved.overrides.length} setting${
+        resolved.overrides.length === 1 ? '' : 's'
+      }`;
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'team-list__remove';
+      remove.textContent = '×';
+      remove.setAttribute('aria-label', `Reset match ${matchId} to defaults`);
+      remove.addEventListener('click', async () => {
+        matchRules = HTA.rules.clearMatchRule(matchRules, matchId);
+        await HTA.storage.saveMatchRules(matchRules);
+        renderMatchRules();
+        renderStreamPrefs();
+      });
+
+      item.append(name, remove);
+      el.ruleList.appendChild(item);
+    }
   }
 
   function renderChannelHint() {
@@ -170,6 +255,21 @@
     await persist();
   });
 
+  el.openStream.addEventListener('change', async () => {
+    settings.openStream = el.openStream.checked;
+    await persist();
+  });
+
+  for (const [key, node] of [
+    ['streamPlatform', el.streamPlatform],
+    ['streamCountry', el.streamCountry]
+  ]) {
+    node.addEventListener('change', async () => {
+      settings[key] = node.value;
+      await persist();
+    });
+  }
+
   for (const [key, node] of [
     ['pageAlerts', el.pageAlerts],
     ['desktopAlerts', el.desktopAlerts]
@@ -224,15 +324,81 @@
     }
   });
 
+  /**
+   * Fire a synthetic alert down the real delivery paths.
+   *
+   * This exists because the honest answer to "does it work?" otherwise
+   * requires waiting for a followed team to actually go live. It uses the
+   * user's own channel settings and the real notifier and notification code,
+   * so a passing test says something about the shipped path rather than about
+   * a mock.
+   */
+  el.testAlert.addEventListener('click', async () => {
+    el.testAlert.disabled = true;
+    el.testHint.classList.remove('hint--warn');
+    el.testHint.textContent = 'Sending…';
+
+    const sample = {
+      key: `test:${Date.now()}`,
+      title: 'Test alert — HLTV Team Alert',
+      body: 'If you can see this, alerts are working.',
+      status: C.STATUS_LIVE,
+      url: 'https://www.hltv.org/matches'
+    };
+
+    const delivered = [];
+    const failed = [];
+
+    if (settings.desktopAlerts) {
+      const reply = await chrome.runtime
+        .sendMessage({ type: C.MSG_DESKTOP_NOTIFY, alert: sample })
+        .catch((error) => ({ ok: false, error: String(error) }));
+      if (reply && reply.ok) delivered.push('desktop notification');
+      else failed.push('desktop notification');
+    }
+
+    if (settings.pageAlerts) {
+      const tabs = await chrome.tabs.query({});
+      const replies = await Promise.all(
+        tabs.map((tab) =>
+          chrome.tabs
+            .sendMessage(tab.id, { type: C.MSG_TEST_ALERT, alert: sample })
+            .catch(() => null)
+        )
+      );
+      if (replies.some((reply) => reply && reply.ok)) delivered.push('on-page toast');
+      else failed.push('on-page toast (no HLTV tab open)');
+    }
+
+    if (delivered.length === 0 && failed.length === 0) {
+      el.testHint.textContent = 'Both channels are off, so there was nothing to send.';
+      el.testHint.classList.add('hint--warn');
+    } else if (failed.length === 0) {
+      el.testHint.textContent = `Sent: ${delivered.join(' and ')}.`;
+    } else {
+      el.testHint.textContent = `Failed: ${failed.join(', ')}.${
+        delivered.length > 0 ? ` Sent: ${delivered.join(', ')}.` : ''
+      }`;
+      el.testHint.classList.add('hint--warn');
+    }
+
+    el.testAlert.disabled = false;
+  });
+
   /* ----------------------------------------------------------------- boot */
 
   (async function init() {
-    settings = await HTA.storage.getSettings();
+    [settings, matchRules] = await Promise.all([
+      HTA.storage.getSettings(),
+      HTA.storage.getMatchRules()
+    ]);
     el.alertsEnabled.checked = settings.alertsEnabled;
     el.pageAlerts.checked = settings.pageAlerts;
     el.desktopAlerts.checked = settings.desktopAlerts;
     renderLeadTimes();
     renderTeams();
+    renderStreamPrefs();
+    renderMatchRules();
     renderChannelHint();
     await renderStatus();
   })();

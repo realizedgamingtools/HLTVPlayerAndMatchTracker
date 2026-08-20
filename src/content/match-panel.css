@@ -1,0 +1,156 @@
+/*
+ * Match-page control panel.
+ *
+ * Injected into HLTV's own layout, so every property is set explicitly rather
+ * than inherited -- HLTV's stylesheet is not ours to rely on and can change
+ * underneath us. Colours follow the site's dark match-page chrome closely
+ * enough to look deliberate without pretending to be part of HLTV.
+ */
+
+#hta-match-panel {
+  box-sizing: border-box;
+  margin: 0 0 12px;
+  padding: 14px 16px;
+  border: 1px solid #2f4f6f;
+  border-left: 3px solid #7ab5e0;
+  border-radius: 4px;
+  background: #1e2c3a;
+  color: #d7e3ee;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+#hta-match-panel *,
+#hta-match-panel *::before,
+#hta-match-panel *::after {
+  box-sizing: border-box;
+}
+
+.hta-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.hta-panel__title {
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.hta-panel__badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #2b3d4f;
+  color: #9fb4c7;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hta-panel__badge--custom {
+  background: #7ab5e0;
+  color: #12202c;
+}
+
+.hta-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px 14px;
+}
+
+.hta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hta-field__label {
+  color: #9fb4c7;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.hta-field__select {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #3d5670;
+  border-radius: 3px;
+  background: #16222e;
+  color: #e6eef6;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.hta-field__select:focus-visible,
+.hta-btn:focus-visible {
+  outline: 2px solid #7ab5e0;
+  outline-offset: 2px;
+}
+
+.hta-panel__preview {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border-radius: 3px;
+  background: #16222e;
+  color: #b9cadb;
+  font-size: 12px;
+  /* Stream names are arbitrary user content and can be long. */
+  overflow-wrap: anywhere;
+}
+
+.hta-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.hta-btn {
+  padding: 7px 14px;
+  border: 1px solid #3d5670;
+  border-radius: 3px;
+  background: #24354a;
+  color: #d7e3ee;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.hta-btn:hover {
+  background: #2c405a;
+}
+
+.hta-btn--primary {
+  border-color: #7ab5e0;
+  background: #7ab5e0;
+  color: #12202c;
+}
+
+.hta-btn--primary:hover {
+  background: #8ec3e9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #hta-match-panel * {
+    transition: none !important;
+  }
+}

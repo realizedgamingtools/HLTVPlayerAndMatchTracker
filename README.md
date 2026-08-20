@@ -4,11 +4,11 @@ A Chrome and Edge extension that tells you when the Counter-Strike teams you
 follow are live or about to play on [HLTV](https://www.hltv.org/).
 
 Add the teams you care about, leave an HLTV tab open, and get an on-page toast
-or a desktop notification when one of them qualifies — instead of refreshing
-the schedule yourself.
+or a desktop notification when one of them qualifies — and, if you want it, the
+match's live stream popped open in its own window.
 
-**Status:** v1.0.0 prototype. Everything below is implemented and tested, but
-the extension has not yet been loaded into a real browser against a live match.
+**Status:** v1.1.0. Everything below is implemented and tested, but the
+extension has not yet been loaded into a real browser against a live match.
 See [Release gates](#release-gates) before treating it as shipped.
 
 ---
@@ -43,7 +43,32 @@ Click the toolbar icon to open the popup:
   whether alerts arrive as on-page toasts, desktop notifications, or both.
 - **Status** — when the last scan ran, how many matches were recognised, and
   whether the browser is actually allowing desktop notifications.
+- **Live stream** — whether to pop the stream open when a followed team goes
+  live, and which platform and language to prefer. These are preferences, not
+  filters: if nobody is broadcasting on your pick, the biggest available stream
+  opens instead.
 - **Scan now** — forces an immediate pass without waiting for the 30s interval.
+- **Send a test alert** — fires a synthetic alert down the real toast and
+  notification paths, so you can confirm delivery works without waiting for a
+  followed team to actually play.
+
+### Per-match settings
+
+Open any match page on HLTV and a panel appears above the stream list. It sets
+that one match's alerting and stream preferences independently: whether to
+alert at all, how far ahead, whether to open the stream, and which platform and
+language to prefer. The platform and language menus list only what this match
+is actually broadcast on.
+
+Every control offers **Use default**, which inherits the global setting rather
+than pinning a copy of it — so overriding a stream language for one match does
+not freeze its lead time, and changing your global lead time still moves that
+match. The panel also previews which stream would open, and **Watch now** opens
+it immediately.
+
+Visiting a match page also snapshots its stream list. That is what lets an
+alert firing later — from the matches list, which carries no stream data — open
+the broadcast you asked for rather than a generic page.
 
 An HLTV tab must stay open. Removing that requirement is Phase 3 of the
 [project brief](docs/PROJECT_BRIEF.md).
@@ -58,6 +83,8 @@ HLTV page  ->  source adapter  ->  match candidates  ->  alert core  ->  channel
 | Path | Role |
 | --- | --- |
 | `src/core/parser.js` | The **only** file that knows HLTV markup. Emits normalized match candidates. |
+| `src/core/streams.js` | Parses a match page's stream list and picks one by preference. |
+| `src/core/rules.js` | Resolves per-match overrides against global settings. |
 | `src/core/normalize.js` | Comparison keys for team names. |
 | `src/core/status.js` | Classifies a match as live, starting-soon, scheduled or past. |
 | `src/core/matching.js` | Decides which followed teams a match involves. |

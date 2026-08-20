@@ -21,10 +21,10 @@ const MODULES = [
   'src/core/normalize.js',
   'src/core/status.js',
   'src/core/matching.js',
+  'src/core/rules.js',
   'src/core/alerts.js',
   'src/core/parser.js',
-  'src/core/streams.js',
-  'src/core/rules.js'
+  'src/core/streams.js'
 ];
 
 for (const relative of MODULES) {
@@ -517,6 +517,102 @@ test('per-match rules override globals field by field', () => {
   );
   assert(!HTA.rules.shouldOpenStream(liveAlert, { openStream: false }), 'respects the setting');
   assert(!HTA.rules.shouldOpenStream(null, { openStream: true }), 'garbage input does not open');
+});
+
+/* ------------------------------ 9. per-match rules drive the alert core */
+
+test('per-match rules change what the alert core emits', () => {
+  const now = 1700000000000;
+  const settings = {
+    teams: ['Vitality'],
+    alertsEnabled: true,
+    leadTimeMinutes: 5,
+    pageAlerts: true,
+    desktopAlerts: false,
+    openStream: false,
+    streamPlatform: 'any',
+    streamCountry: 'any'
+  };
+  const soon = {
+    id: '100',
+    url: '/matches/100/a',
+    team1: 'Vitality',
+    team2: 'FaZe',
+    startTime: now + 20 * 60 * 1000
+  };
+
+  // 20 minutes out, global lead time 5: nothing yet.
+  const quiet = HTA.alerts.generateAlerts({ matches: [soon], settings, now, sentAlerts: {} });
+  assertEqual(quiet.alerts.length, 0, 'outside the global lead window');
+
+  // A per-match lead time of 30 must reclassify this match, not just filter it.
+  const wider = HTA.rules.setMatchRule({}, '100', { leadTimeMinutes: 30 });
+  const early = HTA.alerts.generateAlerts({
+    matches: [soon],
+    settings,
+    matchRules: wider,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(early.alerts.length, 1, 'per-match lead time widens the window');
+  assertEqual(early.alerts[0].status, C.STATUS_STARTING_SOON, 'classified as starting soon');
+
+  // Muting one match leaves the rest of the config alone.
+  const live = { id: '200', url: '/matches/200/b', team1: 'Vitality', team2: 'G2', isLive: true };
+  const muted = HTA.rules.setMatchRule({}, '200', { enabled: false });
+  const silenced = HTA.alerts.generateAlerts({
+    matches: [live],
+    settings,
+    matchRules: muted,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(silenced.alerts.length, 0, 'muted match stays silent');
+  assertEqual(silenced.skipped.muted, 1, 'mute is reported distinctly from disabled');
+  assertEqual(Object.keys(silenced.sentAlerts).length, 0, 'muting burns no dedupe key');
+
+  // Opening a stream is a delivery channel: it keeps an alert alive even with
+  // both notification channels switched off.
+  const streamOnly = HTA.rules.setMatchRule({}, '200', { openStream: true });
+  const withStream = HTA.alerts.generateAlerts({
+    matches: [live],
+    settings: Object.assign({}, settings, { pageAlerts: false, desktopAlerts: false }),
+    matchRules: streamOnly,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(withStream.alerts.length, 1, 'stream channel alone still delivers');
+  assertEqual(withStream.alerts[0].channels.stream, true, 'stream channel flagged');
+  assertEqual(withStream.alerts[0].channels.page, false, 'page channel off');
+
+  // A starting-soon alert must never carry the stream channel.
+  const streamSoon = HTA.rules.setMatchRule({}, '100', {
+    openStream: true,
+    leadTimeMinutes: 30
+  });
+  const soonAlert = HTA.alerts.generateAlerts({
+    matches: [soon],
+    settings,
+    matchRules: streamSoon,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(soonAlert.alerts[0].channels.stream, false, 'no player opened before the match starts');
+
+  // The effective config travels with the alert, so the deliverer knows which
+  // stream preferences to apply without re-resolving.
+  assertEqual(withStream.alerts[0].effective.openStream, true, 'effective config attached');
+
+  // The global master switch outranks a per-match enable.
+  const forced = HTA.rules.setMatchRule({}, '200', { enabled: true });
+  const globallyOff = HTA.alerts.generateAlerts({
+    matches: [live],
+    settings: Object.assign({}, settings, { alertsEnabled: false }),
+    matchRules: forced,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(globallyOff.alerts.length, 0, 'master switch cannot be overridden per match');
 });
 
 /* ----------------------------------------------------------------- report */

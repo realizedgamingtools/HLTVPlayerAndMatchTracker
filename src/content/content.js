@@ -33,9 +33,46 @@
     await HTA.storage.saveSentAlerts(merged);
   }
 
-  function deliver(alert) {
+  /**
+   * Open the match's stream in a popup window.
+   *
+   * The stream list lives on the match page, but alerts almost always fire
+   * from the matches list, which has none. So this reads the snapshot taken
+   * when the user last visited the match page and falls back to HLTV's own
+   * player when there is nothing cached.
+   */
+  async function deliverStream(alert) {
+    const matchId = alert.match && alert.match.id;
+    let streams = [];
+    try {
+      const snapshot = await HTA.storage.getStreamSnapshot(matchId);
+      if (snapshot && Array.isArray(snapshot.streams)) streams = snapshot.streams;
+    } catch (error) {
+      console.warn('[HLTV Team Alert] could not read stream snapshot', error);
+    }
+
+    const resolved = HTA.streams.resolveStreamUrl({
+      streams,
+      prefs: alert.effective,
+      matchId,
+      matchUrl: alert.match && alert.match.url
+    });
+    if (!resolved.url) return;
+
+    chrome.runtime
+      .sendMessage({
+        type: C.MSG_OPEN_STREAM,
+        target: { matchId, url: resolved.url }
+      })
+      .catch(() => {});
+  }
+
+  async function deliver(alert) {
     if (alert.channels.page) {
       HTA.notifier.showToast(alert);
+    }
+    if (alert.channels.stream) {
+      await deliverStream(alert);
     }
     if (alert.channels.desktop) {
       // The service worker owns chrome.notifications; a content script cannot
@@ -64,8 +101,9 @@
     scanning = true;
     try {
       const now = Date.now();
-      const [settings, sentAlerts] = await Promise.all([
+      const [settings, matchRules, sentAlerts] = await Promise.all([
         HTA.storage.getSettings(),
+        HTA.storage.getMatchRules(),
         HTA.storage.getSentAlerts()
       ]);
 
@@ -73,11 +111,12 @@
       const { alerts, sentAlerts: nextHistory } = HTA.alerts.generateAlerts({
         matches: parsed.matches,
         settings,
+        matchRules,
         now,
         sentAlerts
       });
 
-      for (const alert of alerts) deliver(alert);
+      for (const alert of alerts) await deliver(alert);
 
       if (alerts.length > 0) await persistDeliveries(nextHistory, now);
 
@@ -113,11 +152,24 @@
     }
   }
 
-  // Manual scan from the popup's "Scan now" button.
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (!message || message.type !== C.MSG_MANUAL_SCAN) return false;
-    runScan('manual').then((record) => sendResponse({ type: C.MSG_SCAN_RESULT, record }));
-    return true; // keep the message channel open for the async response
+    if (!message) return false;
+
+    // Manual scan from the popup's "Scan now" button.
+    if (message.type === C.MSG_MANUAL_SCAN) {
+      runScan('manual').then((record) => sendResponse({ type: C.MSG_SCAN_RESULT, record }));
+      return true; // keep the message channel open for the async response
+    }
+
+    // Test alert from the popup. Goes through the real notifier, so a passing
+    // test means the actual delivery path works, not a mock of it.
+    if (message.type === C.MSG_TEST_ALERT) {
+      HTA.notifier.showToast(message.alert);
+      sendResponse({ ok: true });
+      return false;
+    }
+
+    return false;
   });
 
   runScan('startup');

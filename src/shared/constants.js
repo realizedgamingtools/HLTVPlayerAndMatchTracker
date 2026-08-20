@@ -56,7 +56,8 @@
     MSG_DESKTOP_NOTIFY: 'hta:desktop-notify',
     MSG_MANUAL_SCAN: 'hta:manual-scan',
     MSG_SCAN_RESULT: 'hta:scan-result',
-    MSG_OPEN_STREAM: 'hta:open-stream'
+    MSG_OPEN_STREAM: 'hta:open-stream',
+    MSG_TEST_ALERT: 'hta:test-alert'
   };
 
   HTA.defaultSettings = function defaultSettings() {
