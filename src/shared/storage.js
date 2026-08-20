@@ -47,6 +47,55 @@
     await local.set({ [C.LOCAL_KEY_SENT_ALERTS]: sentAlerts });
   }
 
+  /** Per-match overrides. Small and user-authored, so they sync. */
+  async function getMatchRules() {
+    const sync = area('sync');
+    if (!sync) return {};
+    const stored = await sync.get(C.SYNC_KEY_MATCH_RULES);
+    return (stored && stored[C.SYNC_KEY_MATCH_RULES]) || {};
+  }
+
+  async function saveMatchRules(rules) {
+    const sync = area('sync');
+    if (!sync) return;
+    await sync.set({ [C.SYNC_KEY_MATCH_RULES]: rules });
+  }
+
+  /**
+   * Stream lists captured from a match page, keyed by match id.
+   *
+   * An alert normally fires while the user is on the matches list, which
+   * carries no stream data. Snapshotting the streams when they visit the match
+   * page is what lets the popup open their preferred broadcast later. Local,
+   * not sync: this is a cache, and it can be large.
+   */
+  async function getStreamSnapshot(matchId) {
+    const local = area('local');
+    if (!local) return null;
+    const stored = await local.get(C.LOCAL_KEY_STREAM_SNAPSHOTS);
+    const all = (stored && stored[C.LOCAL_KEY_STREAM_SNAPSHOTS]) || {};
+    return all[matchId] || null;
+  }
+
+  async function saveStreamSnapshot(matchId, streams, now) {
+    const local = area('local');
+    if (!local) return;
+    const stored = await local.get(C.LOCAL_KEY_STREAM_SNAPSHOTS);
+    const all = (stored && stored[C.LOCAL_KEY_STREAM_SNAPSHOTS]) || {};
+    all[matchId] = { streams, capturedAt: now };
+
+    // Same retention as delivery history: a match older than the window is
+    // over, and its stream list is worthless.
+    const cutoff = now - C.ALERT_HISTORY_TTL_MS;
+    for (const [id, snapshot] of Object.entries(all)) {
+      if (!snapshot || typeof snapshot.capturedAt !== 'number' || snapshot.capturedAt < cutoff) {
+        delete all[id];
+      }
+    }
+
+    await local.set({ [C.LOCAL_KEY_STREAM_SNAPSHOTS]: all });
+  }
+
   /**
    * Health record for the popup: when the last scan ran and what it saw.
    * Written by whichever tab scanned most recently.
@@ -92,6 +141,10 @@
     saveSettings,
     getSentAlerts,
     saveSentAlerts,
+    getMatchRules,
+    saveMatchRules,
+    getStreamSnapshot,
+    saveStreamSnapshot,
     getLastScan,
     saveLastScan,
     rememberNotificationTarget,

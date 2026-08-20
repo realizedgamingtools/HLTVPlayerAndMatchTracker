@@ -1,0 +1,21 @@
+<!--
+  Real HLTV match-page stream block, captured 2026-08-19 from
+  https://www.hltv.org/matches/2396603/natus-vincere-vs-legacy-esports-world-cup-2026
+  Source version: hltv-2026-08
+
+  Changes to the captured HTML: <img src> replaced with "#", and the list
+  trimmed from 28 stream boxes to 5 to keep the fixture readable. The live page
+  carried 27 external streams across Twitch, YouTube and Kick in 11 languages.
+
+  Covers:
+    - HLTV's own player (a.stream-box.hltv-live, relative href, no viewers)
+    - Kick, Twitch and YouTube external streams
+    - country flags standing in for language
+    - a "-" viewer count, which the narrow layout renders instead of a number
+
+  Note the Twitch embed URL ends in `parent=www.hltv.org`. Twitch validates
+  that against the embedding origin and rejects chrome-extension:// origins,
+  which is why the extension opens `watchUrl` in a popup window rather than
+  iframing `embedUrl`. See src/core/streams.js.
+-->
+<div class="streams"><a href="/live?matchId=2396603" class="stream-box hltv-live gtSmartphone-only"><img src="#" class="stream-mini-icon"><span class="hltv-live-logo">HLTV Live</span></a><div class="stream-box "><div class="stream-box-embed" data-stream-embed="https://player.kick.com/gaules?autoplay=true"><img alt="Brazil" src="#" class="stream-flag flag" title="Brazil">gaules</div><div class="watchbox-right"><span class="viewers left-right-padding gtSmartphone-only">5245</span><div class="external-stream" title="Open stream on external site"><a href="https://kick.com/gaules" target="_blank" class="" aria-label="Open stream on external site" rel="noopener"><i class="external-link fa fa-external-link-square"></i></a></div><img src="#" class="external-stream-logo" loading="lazy" height="14px" width="14px"></div></div><div class="stream-box "><div class="stream-box-embed" data-stream-embed="https://player.twitch.tv/?channel=betboom_cs_ru&amp;autoplay=true&amp;parent=www.hltv.org"><img alt="Russia" src="#" class="stream-flag flag" title="Russia">BetBoom</div><div class="watchbox-right"><span class="viewers left-right-padding gtSmartphone-only">273</span><div class="external-stream" title="Open stream on external site"><a href="https://www.twitch.tv/betboom_cs_ru" target="_blank" class="" aria-label="Open stream on external site" rel="noopener"><i class="external-link fa fa-external-link-square"></i></a></div><img src="#" class="external-stream-logo" loading="lazy" height="14px" width="14px"></div></div><div class="stream-box "><div class="stream-box-embed" data-stream-embed="https://player.kick.com/lorranbs?autoplay=true"><img alt="Brazil" src="#" class="stream-flag flag" title="Brazil">LorranBs</div><div class="watchbox-right"><span class="viewers left-right-padding gtSmartphone-only">-</span><div class="external-stream" title="Open stream on external site"><a href="https://kick.com/lorranbs" target="_blank" class="" aria-label="Open stream on external site" rel="noopener"><i class="external-link fa fa-external-link-square"></i></a></div><img src="#" class="external-stream-logo" loading="lazy" height="14px" width="14px"></div></div><div class="stream-box "><div class="stream-box-embed" data-stream-embed="https://www.youtube.com/embed/F76_L9NxLOQ?autoplay=1&amp;mute=1"><img alt="United Kingdom" src="#" class="stream-flag flag" title="United Kingdom">ESL TV B</div><div class="watchbox-right"><span class="viewers left-right-padding gtSmartphone-only">1820</span><div class="external-stream" title="Open stream on external site"><a href="https://www.youtube.com/watch?v=F76_L9NxLOQ" target="_blank" class="" aria-label="Open stream on external site" rel="noopener"><i class="external-link fa fa-external-link-square"></i></a></div><img src="#" class="external-stream-logo" loading="lazy" height="14px" width="14px"></div></div><div class="box-footerline all-streams">All streams</div></div>

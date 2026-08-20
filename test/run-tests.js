@@ -22,7 +22,9 @@ const MODULES = [
   'src/core/status.js',
   'src/core/matching.js',
   'src/core/alerts.js',
-  'src/core/parser.js'
+  'src/core/parser.js',
+  'src/core/streams.js',
+  'src/core/rules.js'
 ];
 
 for (const relative of MODULES) {
@@ -369,6 +371,152 @@ test('parses real HLTV markup from both layouts', () => {
   const brokenResult = HTA.parser.parseMatches(broken, now);
   assertEqual(brokenResult.matches.length, 0, 'unparseable card yields no matches');
   assert(!brokenResult.healthy, 'parse failure is visible, not a silent zero');
+});
+
+/* --------------------------------------------------- 7. stream extraction */
+
+test('parses real HLTV stream markup and picks by preference', () => {
+  const html = fs.readFileSync(path.join(__dirname, 'fixtures', 'match-page-streams.html'), 'utf8');
+  const streams = HTA.streams.parseStreams(parseHTML(html));
+
+  assertEqual(streams.length, 5, 'HLTV player plus four external streams');
+
+  const hltv = streams.find((s) => s.platform === 'hltv');
+  assertEqual(hltv.watchUrl, 'https://www.hltv.org/live?matchId=2396603', 'HLTV player URL resolved');
+  assertEqual(hltv.viewers, null, 'HLTV player reports no viewer count');
+
+  const twitch = streams.find((s) => s.platform === 'twitch');
+  assertEqual(twitch.name, 'BetBoom', 'streamer name');
+  assertEqual(twitch.country, 'Russia', 'language taken from the flag title');
+  assertEqual(twitch.viewers, 273, 'viewer count parsed');
+  assertEqual(twitch.watchUrl, 'https://www.twitch.tv/betboom_cs_ru', 'external watch URL');
+
+  const kickNoViewers = streams.find((s) => s.name === 'LorranBs');
+  assertEqual(kickNoViewers.viewers, null, 'a "-" viewer count is unknown, not zero');
+
+  assertEqual(HTA.streams.platformOf('https://www.youtube.com/watch?v=x'), 'youtube', 'youtube host');
+  assertEqual(HTA.streams.platformOf('https://youtu.be/x'), 'youtube', 'short youtube host');
+  assertEqual(HTA.streams.platformOf('https://example.com/x'), 'other', 'unknown host');
+  assertEqual(HTA.streams.platformOf(null), 'other', 'garbage host');
+
+  assertEqual(HTA.streams.platformsIn(streams).join(','), 'twitch,youtube,kick,hltv', 'platforms present');
+  assertEqual(
+    HTA.streams.countriesIn(streams).join(','),
+    'Brazil,Russia,United Kingdom',
+    'languages present, deduplicated'
+  );
+
+  // -- selection ------------------------------------------------------------
+  const biggest = HTA.streams.pickStream(streams, {});
+  assertEqual(biggest.stream.name, 'gaules', 'no preference picks the biggest audience');
+
+  const onTwitch = HTA.streams.pickStream(streams, { streamPlatform: 'twitch' });
+  assertEqual(onTwitch.stream.platform, 'twitch', 'platform preference honoured');
+  assert(!onTwitch.fellBack.platform, 'no fallback when the platform exists');
+
+  const english = HTA.streams.pickStream(streams, { streamCountry: 'United Kingdom' });
+  assertEqual(english.stream.name, 'ESL TV B', 'language preference honoured');
+
+  // Preference, not a hard filter: an absent platform must still yield a stream.
+  const absent = HTA.streams.pickStream(streams, { streamPlatform: 'hltv', streamCountry: 'Iran' });
+  assert(absent.stream !== null, 'unavailable combination still returns a stream');
+  assert(absent.fellBack.country, 'country fallback reported');
+
+  const noneAvailable = HTA.streams.pickStream([], { streamPlatform: 'twitch' });
+  assertEqual(noneAvailable.stream, null, 'empty stream list yields nothing');
+
+  // -- fallback chain -------------------------------------------------------
+  const direct = HTA.streams.resolveStreamUrl({ streams, prefs: {}, matchId: '2396603' });
+  assertEqual(direct.source, 'stream', 'a known stream is used directly');
+
+  const noStreams = HTA.streams.resolveStreamUrl({ streams: [], prefs: {}, matchId: '2396603' });
+  assertEqual(noStreams.source, 'hltv-live', 'falls back to HLTV own player');
+  assertEqual(noStreams.url, 'https://www.hltv.org/live?matchId=2396603', 'HLTV live URL built');
+
+  const nothingKnown = HTA.streams.resolveStreamUrl({
+    streams: [],
+    prefs: {},
+    matchUrl: 'https://www.hltv.org/matches/1/a'
+  });
+  assertEqual(nothingKnown.source, 'match-page', 'last resort is the match page');
+  assertEqual(HTA.streams.resolveStreamUrl({ streams: [] }).url, null, 'nothing to open');
+});
+
+/* --------------------------------------------------- 8. per-match rules */
+
+test('per-match rules override globals field by field', () => {
+  const settings = {
+    teams: ['Vitality'],
+    alertsEnabled: true,
+    leadTimeMinutes: 15,
+    pageAlerts: true,
+    desktopAlerts: true,
+    openStream: false,
+    streamPlatform: 'any',
+    streamCountry: 'any'
+  };
+
+  // No rule at all: pure inheritance.
+  const inherited = HTA.rules.resolveMatchRule(settings, {}, '2396603');
+  assertEqual(inherited.leadTimeMinutes, 15, 'inherits global lead time');
+  assertEqual(inherited.openStream, false, 'inherits global stream setting');
+  assert(!inherited.hasOverrides, 'nothing customised');
+
+  // A partial rule inherits every field it does not set. This is the whole
+  // point: pinning a stream language must not freeze the lead time.
+  const rules = HTA.rules.setMatchRule({}, '2396603', {
+    openStream: true,
+    streamPlatform: 'twitch'
+  });
+  const resolved = HTA.rules.resolveMatchRule(settings, rules, '2396603');
+  assertEqual(resolved.openStream, true, 'override applied');
+  assertEqual(resolved.streamPlatform, 'twitch', 'override applied');
+  assertEqual(resolved.leadTimeMinutes, 15, 'unset field still inherits');
+  assertEqual(resolved.overrides.length, 2, 'exactly two fields customised');
+
+  // Moving the global still moves the un-overridden field.
+  const movedGlobal = HTA.rules.resolveMatchRule(
+    Object.assign({}, settings, { leadTimeMinutes: 30 }),
+    rules,
+    '2396603'
+  );
+  assertEqual(movedGlobal.leadTimeMinutes, 30, 'global change reaches the overridden match');
+  assertEqual(movedGlobal.openStream, true, 'override survives a global change');
+
+  // A zero lead time is a real value, not "unset".
+  const zeroLead = HTA.rules.setMatchRule({}, 'm', { leadTimeMinutes: 0 });
+  assertEqual(
+    HTA.rules.resolveMatchRule(settings, zeroLead, 'm').leadTimeMinutes,
+    0,
+    'lead time 0 overrides rather than reading as absent'
+  );
+
+  // Turning a match off individually.
+  const muted = HTA.rules.setMatchRule({}, 'm', { enabled: false });
+  assertEqual(HTA.rules.resolveMatchRule(settings, muted, 'm').enabled, false, 'match muted');
+
+  // Rules that override nothing are dropped rather than stored as clutter.
+  const emptied = HTA.rules.setMatchRule(rules, '2396603', {
+    openStream: null,
+    streamPlatform: null
+  });
+  assert(!('2396603' in emptied), 'a rule with no overrides is removed');
+  assert(!('x' in HTA.rules.clearMatchRule({ x: { enabled: false } }, 'x')), 'explicit clear');
+
+  // Other matches are untouched.
+  const two = HTA.rules.setMatchRule(rules, '999', { enabled: false });
+  assertEqual(Object.keys(two).length, 2, 'rules are per match');
+
+  // -- stream opening gate ---------------------------------------------------
+  const liveAlert = { status: C.STATUS_LIVE };
+  const soonAlert = { status: C.STATUS_STARTING_SOON };
+  assert(HTA.rules.shouldOpenStream(liveAlert, { openStream: true }), 'live alert opens a stream');
+  assert(
+    !HTA.rules.shouldOpenStream(soonAlert, { openStream: true }),
+    'a starting-soon alert must not open a player onto a countdown'
+  );
+  assert(!HTA.rules.shouldOpenStream(liveAlert, { openStream: false }), 'respects the setting');
+  assert(!HTA.rules.shouldOpenStream(null, { openStream: true }), 'garbage input does not open');
 });
 
 /* ----------------------------------------------------------------- report */

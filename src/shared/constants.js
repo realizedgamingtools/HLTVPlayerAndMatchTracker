@@ -21,13 +21,29 @@
     /** Delivery history older than this is pruned on write. */
     ALERT_HISTORY_TTL_MS: 7 * 24 * 60 * 60 * 1000,
 
-    /** Lead times offered in the popup, in minutes. */
-    LEAD_TIME_CHOICES: [5, 10, 15, 30, 60],
+    /**
+     * Lead times offered in the UI, in minutes.
+     * 0 means "only once it is actually live": with a zero lead window nothing
+     * is ever classified starting-soon, so only the live alert fires.
+     */
+    LEAD_TIME_CHOICES: [0, 5, 10, 15, 30, 60],
+
+    /** Sentinel for "no preference" in stream selection. */
+    ANY: 'any',
+
+    /** Stream platforms, in tie-break priority order. */
+    STREAM_PLATFORMS: ['twitch', 'youtube', 'kick', 'hltv'],
+
+    /** Size of the stream popup window. */
+    STREAM_POPUP_WIDTH: 1000,
+    STREAM_POPUP_HEIGHT: 620,
 
     /** Storage keys. Preferences sync, delivery state stays local. */
     SYNC_KEY_SETTINGS: 'settings',
+    SYNC_KEY_MATCH_RULES: 'matchRules',
     LOCAL_KEY_SENT_ALERTS: 'sentAlerts',
     LOCAL_KEY_LAST_SCAN: 'lastScan',
+    LOCAL_KEY_STREAM_SNAPSHOTS: 'streamSnapshots',
     SESSION_KEY_NOTIFICATION_TARGETS: 'notificationTargets',
 
     /** Alert statuses emitted by the alert core. */
@@ -39,7 +55,8 @@
     /** Runtime message types. */
     MSG_DESKTOP_NOTIFY: 'hta:desktop-notify',
     MSG_MANUAL_SCAN: 'hta:manual-scan',
-    MSG_SCAN_RESULT: 'hta:scan-result'
+    MSG_SCAN_RESULT: 'hta:scan-result',
+    MSG_OPEN_STREAM: 'hta:open-stream'
   };
 
   HTA.defaultSettings = function defaultSettings() {
@@ -48,7 +65,26 @@
       alertsEnabled: true,
       leadTimeMinutes: 15,
       pageAlerts: true,
-      desktopAlerts: true
+      desktopAlerts: true,
+      // Stream popup defaults. Per-match rules override these; see core/rules.js.
+      openStream: false,
+      streamPlatform: 'any',
+      streamCountry: 'any'
+    };
+  };
+
+  /**
+   * Per-match override. Every field may be null, meaning "inherit the global
+   * setting" -- that is what lets a user configure one match without pinning
+   * the rest of their preferences to it.
+   */
+  HTA.defaultMatchRule = function defaultMatchRule() {
+    return {
+      enabled: null,
+      leadTimeMinutes: null,
+      openStream: null,
+      streamPlatform: null,
+      streamCountry: null
     };
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);
