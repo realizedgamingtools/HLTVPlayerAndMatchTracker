@@ -123,14 +123,25 @@
     panel.className = 'hta-panel';
     panel.setAttribute('aria-label', 'HLTV Team Alert settings for this match');
 
+    // Same header shape as the team panel: the extension names itself rather
+    // than passing for one of HLTV's own controls.
     const header = document.createElement('div');
     header.className = 'hta-panel__header';
-    const title = document.createElement('h3');
-    title.className = 'hta-panel__title';
-    title.textContent = 'Alert me about this match';
+
+    const brand = document.createElement('p');
+    brand.className = 'hta-panel__brand';
+    brand.textContent = 'HLTV Team Alert';
+
     const badge = document.createElement('span');
     badge.className = 'hta-panel__badge';
-    header.append(title, badge);
+    header.append(brand, badge);
+
+    const body = document.createElement('div');
+    body.className = 'hta-panel__body';
+
+    const title = document.createElement('h3');
+    title.className = 'hta-panel__title';
+    title.textContent = 'Just this match';
 
     const grid = document.createElement('div');
     grid.className = 'hta-panel__grid';
@@ -212,7 +223,15 @@
     reset.textContent = 'Use defaults';
 
     actions.append(watchNow, reset);
-    panel.append(header, grid, preview, actions);
+
+    // Options sit in the same collapsible block the team panel uses, so the
+    // two panels stack on a match page without looking like different widgets.
+    const options = document.createElement('div');
+    options.className = 'hta-panel__options';
+    options.append(grid);
+
+    body.append(title, preview, actions, options);
+    panel.append(header, body);
 
     mount.parent.insertBefore(panel, mount.before);
 

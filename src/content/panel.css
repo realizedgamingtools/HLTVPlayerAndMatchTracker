@@ -2,25 +2,35 @@
  * Injected control panels: the team-page follow panel and the match-page
  * per-match panel, which share one look.
  *
- * Injected into HLTV's own layout, so every property is set explicitly rather
- * than inherited -- HLTV's stylesheet is not ours to rely on and can change
- * underneath us. Colours follow the site's dark match-page chrome closely
- * enough to look deliberate without pretending to be part of HLTV.
+ * These deliberately do NOT blend into HLTV. An injected control that mimics
+ * the host page reads as a native feature, which is both confusing when it
+ * behaves differently and dishonest about where it came from. So the panel
+ * sits on its own raised surface, carries its own amber accent rather than
+ * HLTV's blue, and names itself. The user should never wonder which of these
+ * controls is ours.
+ *
+ * Every property is set explicitly: HLTV's stylesheet is not ours to rely on
+ * and can change underneath us.
  */
 
 .hta-panel {
   box-sizing: border-box;
-  margin: 0 0 12px;
-  padding: 14px 16px;
-  border: 1px solid #2f4f6f;
-  border-left: 3px solid #7ab5e0;
-  border-radius: 4px;
-  background: #1e2c3a;
-  color: #d7e3ee;
+  position: relative;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 1px solid #2b3a4a;
+  /* The amber cap is the strongest "this is not HLTV" signal on the page. */
+  border-top: 3px solid #f5a623;
+  border-radius: 8px;
+  background: #141e29;
+  color: #d9e4ee;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
   text-align: left;
+  box-shadow:
+    0 2px 4px rgba(5, 10, 16, 0.4),
+    0 12px 28px -10px rgba(5, 10, 16, 0.65);
 }
 
 .hta-panel *,
@@ -29,68 +39,123 @@
   box-sizing: border-box;
 }
 
+/* ------------------------------------------------------------------ header */
+
 .hta-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  padding: 12px 18px 0;
 }
 
-.hta-panel__title {
+/* Names the extension, so the panel's origin is never ambiguous. */
+.hta-panel__brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
-  padding: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-  text-transform: none;
-  letter-spacing: 0;
+  color: #f5a623;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hta-panel__brand::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f5a623;
+  flex: none;
 }
 
 .hta-panel__badge {
   flex: none;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: #2b3d4f;
-  color: #9fb4c7;
+  padding: 3px 9px;
+  border-radius: 11px;
+  background: #22303f;
+  color: #94a8bb;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .hta-panel__badge--custom {
-  background: #7ab5e0;
-  color: #12202c;
+  background: rgba(245, 166, 35, 0.16);
+  color: #f5a623;
+}
+
+.hta-panel__body {
+  padding: 10px 18px 16px;
+}
+
+.hta-panel__title {
+  margin: 0 0 4px;
+  padding: 0;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  text-wrap: balance;
+}
+
+/* ------------------------------------------------------------ status line */
+
+.hta-panel__preview {
+  margin: 0;
+  color: #9db0c2;
+  font-size: 13px;
+  /* Team and stream names are arbitrary content and can be long. */
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- options */
+
+.hta-panel__options {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #22303f;
+}
+
+.hta-panel__options[hidden] {
+  display: none;
 }
 
 .hta-panel__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px 14px;
+  /* Wide enough that four fields land as 2x2 rather than 3 plus an orphan at
+     the widths HLTV's columns actually give us. */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 14px;
 }
 
 .hta-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
 }
 
 .hta-field__label {
-  color: #9fb4c7;
-  font-size: 11px;
-  font-weight: 600;
+  color: #8ba0b4;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .hta-field__select {
   width: 100%;
   min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid #3d5670;
-  border-radius: 3px;
-  background: #16222e;
+  padding: 7px 9px;
+  border: 1px solid #33465a;
+  border-radius: 5px;
+  background: #0e1720;
   color: #e6eef6;
   font-family: inherit;
   font-size: 13px;
@@ -99,69 +164,67 @@
   appearance: auto;
 }
 
+.hta-field__select:hover {
+  border-color: #46617c;
+}
+
 .hta-field__select:focus-visible,
 .hta-btn:focus-visible {
-  outline: 2px solid #7ab5e0;
+  outline: 2px solid #f5a623;
   outline-offset: 2px;
 }
 
-.hta-panel__preview {
-  margin: 12px 0 0;
-  padding: 8px 10px;
-  border-radius: 3px;
-  background: #16222e;
-  color: #b9cadb;
-  font-size: 12px;
-  /* Stream names are arbitrary user content and can be long. */
-  overflow-wrap: anywhere;
-}
+/* ---------------------------------------------------------------- actions */
 
 .hta-panel__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .hta-btn {
-  padding: 7px 14px;
-  border: 1px solid #3d5670;
-  border-radius: 3px;
-  background: #24354a;
-  color: #d7e3ee;
+  padding: 9px 18px;
+  border: 1px solid #3a4f65;
+  border-radius: 6px;
+  background: #1e2c3a;
+  color: #d9e4ee;
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
   cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
 
 .hta-btn:hover {
-  background: #2c405a;
+  background: #26374a;
+  border-color: #4a637d;
 }
 
+/* The primary action is the one thing on the panel meant to catch the eye. */
 .hta-btn--primary {
-  border-color: #7ab5e0;
-  background: #7ab5e0;
-  color: #12202c;
+  border-color: #f5a623;
+  background: #f5a623;
+  color: #16202a;
+  font-weight: 700;
 }
 
 .hta-btn--primary:hover {
-  background: #8ec3e9;
+  background: #ffb838;
+  border-color: #ffb838;
+}
+
+.hta-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hta-panel * {
+  .hta-panel *,
+  .hta-panel *::before,
+  .hta-panel *::after {
     transition: none !important;
+    animation: none !important;
   }
-}
-
-/* Team-page panel: the options block is hidden until the team is followed,
-   so the unfollowed state stays a single button and one line of context. */
-.hta-panel__options {
-  margin-top: 12px;
-}
-
-.hta-panel__options[hidden] {
-  display: none;
 }

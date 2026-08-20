@@ -111,22 +111,38 @@
     panel.className = 'hta-panel';
     panel.setAttribute('aria-label', `HLTV Team Alert settings for ${name}`);
 
+    // Header carries the extension's name so the panel never reads as one of
+    // HLTV's own controls.
     const header = document.createElement('div');
     header.className = 'hta-panel__header';
 
+    const brand = document.createElement('p');
+    brand.className = 'hta-panel__brand';
+    brand.textContent = 'HLTV Team Alert';
+
+    const badge = document.createElement('span');
+    badge.className = 'hta-panel__badge';
+
+    header.append(brand, badge);
+
+    const body = document.createElement('div');
+    body.className = 'hta-panel__body';
+
     const title = document.createElement('h3');
     title.className = 'hta-panel__title';
-
-    const followBtn = document.createElement('button');
-    followBtn.type = 'button';
-    followBtn.className = 'hta-btn hta-btn--primary';
-
-    header.append(title, followBtn);
 
     const status = document.createElement('p');
     status.className = 'hta-panel__preview';
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
+
+    const actions = document.createElement('div');
+    actions.className = 'hta-panel__actions';
+
+    const followBtn = document.createElement('button');
+    followBtn.type = 'button';
+    followBtn.className = 'hta-btn hta-btn--primary';
+    actions.append(followBtn);
 
     const grid = document.createElement('div');
     grid.className = 'hta-panel__grid';
@@ -176,7 +192,8 @@
     options.className = 'hta-panel__options';
     options.append(grid);
 
-    panel.append(header, status, options);
+    body.append(title, status, actions, options);
+    panel.append(header, body);
 
     // Sits directly under the team's name block, where a follow control is
     // expected, rather than at the bottom of the page.
@@ -197,9 +214,12 @@
       const following = record !== null;
 
       title.textContent = following ? `Following ${name}` : `Alert me about ${name}`;
-      followBtn.textContent = following ? 'Unfollow' : 'Follow';
+      followBtn.textContent = following ? 'Unfollow' : `Follow ${name}`;
       followBtn.classList.toggle('hta-btn--primary', !following);
       options.hidden = !following;
+
+      badge.textContent = following ? 'Following' : 'Not following';
+      badge.classList.toggle('hta-panel__badge--custom', following);
 
       if (!following) {
         status.textContent = `Follow ${name} to be alerted when they play. ${describeNext(upcoming)}`;
