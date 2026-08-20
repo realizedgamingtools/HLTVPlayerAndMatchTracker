@@ -20,7 +20,7 @@
   padding: 0;
   border: 1px solid #2b3a4a;
   /* The amber cap is the strongest "this is not HLTV" signal on the page. */
-  border-top: 3px solid #f5a623;
+  border-top: 3px solid #c8433f;
   border-radius: 8px;
   background: #141e29;
   color: #d9e4ee;
@@ -55,7 +55,7 @@
   align-items: center;
   gap: 6px;
   margin: 0;
-  color: #f5a623;
+  color: #c8433f;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.11em;
@@ -63,13 +63,12 @@
   white-space: nowrap;
 }
 
-.hta-panel__brand::before {
-  content: '';
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #f5a623;
+/* The mark itself, so the panel's origin is unmistakable at a glance. */
+.hta-panel__logo {
+  width: 15px;
+  height: 15px;
   flex: none;
+  display: block;
 }
 
 .hta-panel__badge {
@@ -85,7 +84,7 @@
 
 .hta-panel__badge--custom {
   background: rgba(245, 166, 35, 0.16);
-  color: #f5a623;
+  color: #c8433f;
 }
 
 .hta-panel__body {
@@ -170,7 +169,7 @@
 
 .hta-field__select:focus-visible,
 .hta-btn:focus-visible {
-  outline: 2px solid #f5a623;
+  outline: 2px solid #c8433f;
   outline-offset: 2px;
 }
 
@@ -204,8 +203,8 @@
 
 /* The primary action is the one thing on the panel meant to catch the eye. */
 .hta-btn--primary {
-  border-color: #f5a623;
-  background: #f5a623;
+  border-color: #c8433f;
+  background: #c8433f;
   color: #16202a;
   font-weight: 700;
 }

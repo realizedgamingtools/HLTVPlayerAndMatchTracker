@@ -130,7 +130,12 @@
 
     const brand = document.createElement('p');
     brand.className = 'hta-panel__brand';
-    brand.textContent = 'Realized HLTV Extension';
+
+    const logo = document.createElement('img');
+    logo.className = 'hta-panel__logo';
+    logo.src = chrome.runtime.getURL('icons/icon48.png');
+    logo.alt = '';
+    brand.append(logo, document.createTextNode('Realized HLTV Extension'));
 
     const badge = document.createElement('span');
     badge.className = 'hta-panel__badge';
