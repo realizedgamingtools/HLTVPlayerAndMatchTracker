@@ -211,14 +211,23 @@
     body.append(title, status, actions, options);
     panel.append(header, body);
 
-    // Under the profile header, where a follow control is expected.
-    const anchor =
-      document.querySelector('.playerProfile') ||
-      document.querySelector('.profile-player-container') ||
-      nickEl.closest('.standard-box') ||
-      nickEl.parentElement;
-    if (!anchor || !anchor.parentElement) return;
-    anchor.parentElement.insertBefore(panel, anchor.nextSibling);
+    // Directly under the header card, where a follow control is expected.
+    //
+    // Not after .playerProfile: that wraps the whole profile -- header,
+    // trophies, tabs and ~1600px of statistics -- so appending after it put the
+    // panel 2248px down a 3993px page, well below the fold and effectively
+    // invisible. The header card is the small block at the top.
+    const mount = (() => {
+      const profile = document.querySelector('.playerProfile');
+      const headerCard = profile && profile.querySelector('.playerContainer');
+      if (profile && headerCard) return { parent: profile, before: headerCard.nextSibling };
+
+      const box = nickEl.closest('.standard-box') || nickEl.parentElement;
+      if (box && box.parentElement) return { parent: box.parentElement, before: box.nextSibling };
+      return null;
+    })();
+    if (!mount) return;
+    mount.parent.insertBefore(panel, mount.before);
 
     /* ------------------------------------------------------------ behaviour */
 
