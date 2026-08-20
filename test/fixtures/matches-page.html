@@ -1,0 +1,88 @@
+<!--
+  Representative slice of an HLTV /matches page.
+  Source version: hltv-2026-08
+
+  Covers the four cases the parser has to get right:
+    1. a live match      -> isLive true, no usable start time
+    2. an upcoming match -> data-unix start time, isLive false
+    3. a second upcoming -> confirms multiple cards parse independently
+    4. a TBD placeholder -> no named teams, must be skipped entirely
+
+  When HLTV changes its markup, replace this fragment with a fresh copy and
+  bump constants.SOURCE_VERSION.
+-->
+<div class="matches-list">
+
+  <div class="liveMatch-container" team1="4608" team2="6667">
+    <div class="liveMatch">
+      <a href="/matches/2380123/vitality-vs-faze-blast-premier-fall-final-2026" class="match a-reset">
+        <div class="matchTeams text-ellipsis">
+          <div class="matchTeam team1">
+            <div class="matchTeamLogoContainer"><img class="matchTeamLogo" src="/img/static/team/4608.png"></div>
+            <div class="matchTeamName text-ellipsis">Vitality</div>
+          </div>
+          <div class="matchTeam team2">
+            <div class="matchTeamLogoContainer"><img class="matchTeamLogo" src="/img/static/team/6667.png"></div>
+            <div class="matchTeamName text-ellipsis">FaZe</div>
+          </div>
+        </div>
+        <div class="matchTime matchLive"><span class="matchLiveSpan">LIVE</span></div>
+        <div class="matchMeta">bo3</div>
+        <div class="matchEvent">
+          <div class="matchEventName gtSmartphone-only">BLAST Premier Fall Final 2026</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="upcomingMatch" team1="4608" team2="7175" stars="2">
+    <a href="/matches/2380456/natus-vincere-vs-spirit-iem-cologne-2026" class="match a-reset">
+      <div class="matchTeams text-ellipsis">
+        <div class="matchTeam team1">
+          <div class="matchTeamName text-ellipsis">Natus&nbsp;Vincere</div>
+        </div>
+        <div class="matchTeam team2">
+          <div class="matchTeamName text-ellipsis">Team Spirit</div>
+        </div>
+      </div>
+      <div class="matchTime" data-unix="1755622800000">17:00</div>
+      <div class="matchMeta">bo3</div>
+      <div class="matchEvent">
+        <div class="matchEventName gtSmartphone-only">IEM Cologne 2026</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="upcomingMatch" team1="9565" team2="10503" stars="1">
+    <a href="/matches/2380789/g2-vs-mouz-esl-pro-league-season-25" class="match a-reset">
+      <div class="matchTeams text-ellipsis">
+        <div class="matchTeam team1">
+          <div class="matchTeamName text-ellipsis">G2</div>
+        </div>
+        <div class="matchTeam team2">
+          <div class="matchTeamName text-ellipsis">MOUZ</div>
+        </div>
+      </div>
+      <div class="matchTime" data-unix="1755720600000">20:10</div>
+      <div class="matchMeta">bo1</div>
+      <div class="matchEvent">
+        <div class="matchEventName gtSmartphone-only">ESL Pro League Season 25</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="upcomingMatch" stars="0">
+    <a href="/matches/2380999/tbd-vs-tbd-iem-cologne-2026" class="match a-reset">
+      <div class="matchTeams text-ellipsis">
+        <div class="matchTeam team1"></div>
+        <div class="matchTeam team2"></div>
+      </div>
+      <div class="matchTime" data-unix="1755730000000">22:00</div>
+      <div class="matchMeta">bo3</div>
+      <div class="matchEvent">
+        <div class="matchEventName gtSmartphone-only">IEM Cologne 2026</div>
+      </div>
+    </a>
+  </div>
+
+</div>

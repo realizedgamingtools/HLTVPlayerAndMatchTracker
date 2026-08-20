@@ -1,0 +1,14 @@
+# Build / packaging output
+dist/
+*.zip
+
+# Editor and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node is used only for the test runner; no dependencies are installed.
+node_modules/
+npm-debug.log*

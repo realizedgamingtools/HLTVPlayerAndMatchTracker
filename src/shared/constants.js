@@ -1,0 +1,53 @@
+/**
+ * Shared constants for HLTV Team Alert.
+ *
+ * Loaded as a classic script in the content script world, imported via
+ * importScripts() in the service worker, and executed directly by the Node
+ * test runner. Everything hangs off a single global namespace so the same
+ * file works in all three environments with no build step.
+ */
+(function (root) {
+  'use strict';
+
+  const HTA = (root.HTA = root.HTA || {});
+
+  HTA.constants = {
+    /** Bumped whenever the HLTV adapter's selectors change. */
+    SOURCE_VERSION: 'hltv-2026-08',
+
+    /** How often the content script rescans an open HLTV page. */
+    SCAN_INTERVAL_MS: 30 * 1000,
+
+    /** Delivery history older than this is pruned on write. */
+    ALERT_HISTORY_TTL_MS: 7 * 24 * 60 * 60 * 1000,
+
+    /** Lead times offered in the popup, in minutes. */
+    LEAD_TIME_CHOICES: [5, 10, 15, 30, 60],
+
+    /** Storage keys. Preferences sync, delivery state stays local. */
+    SYNC_KEY_SETTINGS: 'settings',
+    LOCAL_KEY_SENT_ALERTS: 'sentAlerts',
+    SESSION_KEY_NOTIFICATION_TARGETS: 'notificationTargets',
+
+    /** Alert statuses emitted by the alert core. */
+    STATUS_LIVE: 'live',
+    STATUS_STARTING_SOON: 'starting-soon',
+    STATUS_SCHEDULED: 'scheduled',
+    STATUS_PAST: 'past',
+
+    /** Runtime message types. */
+    MSG_DESKTOP_NOTIFY: 'hta:desktop-notify',
+    MSG_MANUAL_SCAN: 'hta:manual-scan',
+    MSG_SCAN_RESULT: 'hta:scan-result'
+  };
+
+  HTA.defaultSettings = function defaultSettings() {
+    return {
+      teams: [],
+      alertsEnabled: true,
+      leadTimeMinutes: 15,
+      pageAlerts: true,
+      desktopAlerts: true
+    };
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : self);
