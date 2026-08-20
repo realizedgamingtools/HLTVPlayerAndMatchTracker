@@ -34,12 +34,24 @@
     /** Stream platforms, in tie-break priority order. */
     STREAM_PLATFORMS: ['twitch', 'youtube', 'kick', 'hltv'],
 
+    /**
+     * Display names. Capitalising the id gives "Youtube" and "Hltv", which
+     * look like typos, so the labels are spelled out rather than derived.
+     */
+    PLATFORM_LABELS: {
+      twitch: 'Twitch',
+      youtube: 'YouTube',
+      kick: 'Kick',
+      hltv: 'HLTV Live'
+    },
+
     /** Size of the stream popup window. */
     STREAM_POPUP_WIDTH: 1000,
     STREAM_POPUP_HEIGHT: 620,
 
     /** Storage keys. Preferences sync, delivery state stays local. */
     SYNC_KEY_SETTINGS: 'settings',
+    SYNC_KEY_FOLLOWED_TEAMS: 'followedTeams',
     SYNC_KEY_MATCH_RULES: 'matchRules',
     LOCAL_KEY_SENT_ALERTS: 'sentAlerts',
     LOCAL_KEY_LAST_SCAN: 'lastScan',
@@ -57,7 +69,8 @@
     MSG_MANUAL_SCAN: 'hta:manual-scan',
     MSG_SCAN_RESULT: 'hta:scan-result',
     MSG_OPEN_STREAM: 'hta:open-stream',
-    MSG_TEST_ALERT: 'hta:test-alert'
+    MSG_TEST_ALERT: 'hta:test-alert',
+    MSG_TEAMS_CHANGED: 'hta:teams-changed'
   };
 
   HTA.defaultSettings = function defaultSettings() {
@@ -75,11 +88,12 @@
   };
 
   /**
-   * Per-match override. Every field may be null, meaning "inherit the global
-   * setting" -- that is what lets a user configure one match without pinning
-   * the rest of their preferences to it.
+   * Overridable alert fields. Null means "inherit from the scope above".
+   *
+   * The same shape is used at team and match scope, which is what makes the
+   * global -> team -> match chain in core/rules.js uniform.
    */
-  HTA.defaultMatchRule = function defaultMatchRule() {
+  function emptyOverride() {
     return {
       enabled: null,
       leadTimeMinutes: null,
@@ -87,5 +101,30 @@
       streamPlatform: null,
       streamCountry: null
     };
+  }
+
+  HTA.defaultMatchRule = emptyOverride;
+  HTA.defaultTeamRule = emptyOverride;
+
+  /**
+   * A followed team.
+   *
+   * Identity is the HLTV team id when we have it -- which we do whenever the
+   * user followed from a team page. Teams added by name from the popup have no
+   * id until the user visits their profile, so they are keyed by normalized
+   * name and upgraded in place later. `name` stays the display label and the
+   * thing match cards are matched against.
+   */
+  HTA.defaultFollowedTeam = function defaultFollowedTeam(fields) {
+    return Object.assign(
+      {
+        id: null,
+        name: '',
+        slug: null,
+        followedAt: null
+      },
+      emptyOverride(),
+      fields || {}
+    );
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

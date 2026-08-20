@@ -115,6 +115,85 @@ if (popupPath && exists(popupPath)) {
   notes.push(`${checked} popup asset references resolved`);
 }
 
+/* ------------------------------------- every page loads what it uses */
+
+/*
+ * These are plain scripts sharing a global, with no module system to catch a
+ * missing dependency. Leave one out and the page throws at runtime in a way
+ * nothing else here notices -- the popup silently rendered an empty team list
+ * this way. So: for each page, cross-reference the modules it loads against
+ * the ones its own code reaches for.
+ */
+
+const MODULE_DEFINITION = /HTA\.(\w+)\s*=\s*\{/g;
+const MODULE_USE = /HTA\.(\w+)\./g;
+
+const providedBy = new Map();
+for (const relative of scripts) {
+  if (!relative.startsWith('src/')) continue;
+  const source = fs.readFileSync(path.join(ROOT, relative), 'utf8');
+  let hit;
+  MODULE_DEFINITION.lastIndex = 0;
+  while ((hit = MODULE_DEFINITION.exec(source)) !== null) providedBy.set(hit[1], relative);
+}
+
+function checkBundle(label, files) {
+  const loaded = new Set();
+  for (const [moduleName, source] of providedBy) {
+    if (files.includes(source)) loaded.add(moduleName);
+  }
+  for (const relative of files) {
+    if (!exists(relative)) continue;
+    const source = fs.readFileSync(path.join(ROOT, relative), 'utf8');
+    let hit;
+    MODULE_USE.lastIndex = 0;
+    while ((hit = MODULE_USE.exec(source)) !== null) {
+      const used = hit[1];
+      if (providedBy.has(used) && !loaded.has(used)) {
+        fail(`${label}: ${relative} uses HTA.${used} but ${providedBy.get(used)} is not loaded there`);
+      }
+    }
+  }
+}
+
+let bundlesChecked = 0;
+for (const entry of manifest.content_scripts || []) {
+  checkBundle((entry.matches || []).join(','), entry.js || []);
+  bundlesChecked += 1;
+}
+
+if (popupPath && exists(popupPath)) {
+  const html = fs.readFileSync(path.join(ROOT, popupPath), 'utf8');
+  const popupDir = path.posix.dirname(popupPath);
+  const popupScripts = [];
+  const scriptPattern = /<script\s+src\s*=\s*"([^"]+)"/g;
+  let tag;
+  while ((tag = scriptPattern.exec(html)) !== null) {
+    popupScripts.push(path.posix.normalize(path.posix.join(popupDir, tag[1])));
+  }
+  checkBundle('popup', popupScripts);
+  bundlesChecked += 1;
+}
+
+// The service worker declares its own dependencies via importScripts.
+const workerPath = manifest.background && manifest.background.service_worker;
+if (workerPath && exists(workerPath)) {
+  const source = fs.readFileSync(path.join(ROOT, workerPath), 'utf8');
+  const imported = [];
+  const importPattern = /importScripts\(([^)]*)\)/g;
+  let call;
+  while ((call = importPattern.exec(source)) !== null) {
+    for (const raw of call[1].split(',')) {
+      const cleaned = raw.trim().replace(/^['"]|['"]$/g, '').replace(/^\//, '');
+      if (cleaned) imported.push(cleaned);
+    }
+  }
+  checkBundle('service worker', imported.concat([workerPath]));
+  bundlesChecked += 1;
+}
+
+notes.push(`${bundlesChecked} script bundles have their module dependencies satisfied`);
+
 /* --------------------------------------------------- permission hygiene */
 
 const declared = new Set(manifest.permissions || []);

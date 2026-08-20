@@ -36,31 +36,44 @@
 
   let settings = HTA.defaultSettings();
   let matchRules = {};
+  let followedTeams = {};
 
   /* ------------------------------------------------------------ rendering */
 
+  /**
+   * Followed teams.
+   *
+   * Each row says whether that team has its own settings, because a team
+   * customised on its HLTV profile is otherwise indistinguishable here from
+   * one running on the defaults.
+   */
   function renderTeams() {
     el.teamList.replaceChildren();
-    el.teamEmpty.hidden = settings.teams.length > 0;
+    const teams = HTA.teams.listTeams(followedTeams);
+    el.teamEmpty.hidden = teams.length > 0;
 
-    for (const team of settings.teams) {
+    for (const team of teams) {
       const item = document.createElement('li');
       item.className = 'team-list__item';
 
       const name = document.createElement('span');
       name.className = 'team-list__name';
-      name.textContent = team;
+      const resolved = HTA.rules.resolveRule(settings, { team });
+      const custom = resolved.overriddenFields.length;
+      name.textContent = custom > 0 ? `${team.name} · ${custom} custom` : team.name;
+      if (resolved.enabled === false) name.textContent += ' · muted';
 
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'team-list__remove';
       remove.textContent = '×';
-      remove.setAttribute('aria-label', `Unfollow ${team}`);
+      remove.setAttribute('aria-label', `Unfollow ${team.name}`);
       remove.addEventListener('click', async () => {
-        settings.teams = HTA.matching.removeTeam(settings.teams, team);
-        await HTA.storage.saveSettings(settings);
+        followedTeams = HTA.teams.unfollowTeam(followedTeams, team);
+        await HTA.storage.saveFollowedTeams(followedTeams);
         renderTeams();
-        el.addHint.textContent = `Unfollowed ${team}.`;
+        renderStatus();
+        el.addHint.textContent = `Unfollowed ${team.name}.`;
       });
 
       item.append(name, remove);
@@ -93,7 +106,7 @@
 
     el.streamPlatform.replaceChildren();
     for (const [value, label] of [[C.ANY, 'Any platform']].concat(
-      C.STREAM_PLATFORMS.map((p) => [p, p === 'hltv' ? 'HLTV Live' : p[0].toUpperCase() + p.slice(1)])
+      C.STREAM_PLATFORMS.map((p) => [p, C.PLATFORM_LABELS[p] || p])
     )) {
       const option = document.createElement('option');
       option.value = value;
@@ -214,7 +227,8 @@
       );
     }
 
-    addStatusRow('Following', `${settings.teams.length} team${settings.teams.length === 1 ? '' : 's'}`);
+    const count = Object.keys(followedTeams).length;
+    addStatusRow('Following', `${count} team${count === 1 ? '' : 's'}`);
   }
 
   /* -------------------------------------------------------------- actions */
@@ -225,19 +239,23 @@
 
   el.addForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const result = HTA.matching.addTeam(settings.teams, el.teamInput.value);
 
-    if (!result.added) {
-      el.addHint.textContent =
-        result.reason === 'duplicate'
-          ? 'You already follow that team.'
-          : 'Enter a team name first.';
+    // A team added here has no HLTV id: nothing on this screen knows one. The
+    // record is upgraded in place the first time its profile page is opened.
+    const name = HTA.normalize.normalizeText(el.teamInput.value);
+    if (!name) {
+      el.addHint.textContent = 'Enter a team name first.';
+      el.addHint.classList.add('hint--warn');
+      return;
+    }
+    if (HTA.teams.isFollowed(followedTeams, { name })) {
+      el.addHint.textContent = 'You already follow that team.';
       el.addHint.classList.add('hint--warn');
       return;
     }
 
-    settings.teams = result.teams;
-    await persist();
+    followedTeams = HTA.teams.followTeam(followedTeams, { name }, Date.now());
+    await HTA.storage.saveFollowedTeams(followedTeams);
     el.teamInput.value = '';
     el.addHint.textContent = '';
     el.addHint.classList.remove('hint--warn');
@@ -388,8 +406,9 @@
   /* ----------------------------------------------------------------- boot */
 
   (async function init() {
-    [settings, matchRules] = await Promise.all([
+    [settings, followedTeams, matchRules] = await Promise.all([
       HTA.storage.getSettings(),
+      HTA.storage.getFollowedTeams(),
       HTA.storage.getMatchRules()
     ]);
     el.alertsEnabled.checked = settings.alertsEnabled;

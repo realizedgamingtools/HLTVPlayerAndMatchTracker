@@ -39,26 +39,5 @@
     return hits;
   }
 
-  /** Add a team to the followed list, rejecting blanks and duplicates. */
-  function addTeam(followedTeams, rawName) {
-    const list = Array.isArray(followedTeams) ? followedTeams.slice() : [];
-    const display = HTA.normalize.normalizeText(rawName);
-    if (!display) return { teams: list, added: false, reason: 'empty' };
-    const key = normalizeTeamName(display);
-    if (list.some((existing) => normalizeTeamName(existing) === key)) {
-      return { teams: list, added: false, reason: 'duplicate' };
-    }
-    list.push(display);
-    list.sort((a, b) => normalizeTeamName(a).localeCompare(normalizeTeamName(b)));
-    return { teams: list, added: true, reason: null };
-  }
-
-  /** Remove a team by name. */
-  function removeTeam(followedTeams, rawName) {
-    const key = normalizeTeamName(rawName);
-    const list = Array.isArray(followedTeams) ? followedTeams : [];
-    return list.filter((existing) => normalizeTeamName(existing) !== key);
-  }
-
-  HTA.matching = { buildTeamIndex, matchedTeams, addTeam, removeTeam };
+  HTA.matching = { buildTeamIndex, matchedTeams };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

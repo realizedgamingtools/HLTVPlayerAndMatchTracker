@@ -1,11 +1,19 @@
 /**
  * Rule resolution.
  *
- * A user configures most behaviour once, globally, then overrides it for the
- * occasional match they care about more (or less) than usual. Every per-match
- * field is nullable and null means "inherit" — so a rule that only pins a
- * stream language keeps following the global lead time, and changing the
- * global lead time still moves that match.
+ * Settings resolve down a chain of three scopes:
+ *
+ *   global defaults  ->  per-team  ->  per-match
+ *
+ * A user configures most behaviour once, globally, then adjusts a team they
+ * care about more than the rest, then occasionally a single match. Every
+ * override field is nullable and null means "inherit from the scope above", so
+ * pinning a stream language for one team keeps its lead time following the
+ * global setting, and changing the global still moves everything that has not
+ * been pinned.
+ *
+ * Team scope is the one users actually reach for -- they follow a team, not a
+ * fixture list -- so it sits between the other two rather than replacing them.
  *
  * Pure: no storage, no DOM. The caller loads settings and rules and passes
  * them in.
@@ -30,17 +38,19 @@
   }
 
   /**
-   * Merge a per-match rule over the global settings.
+   * Resolve the effective config for a match.
    *
    * @param {object} settings global settings
-   * @param {object} matchRules map of matchId -> rule
-   * @param {string} matchId
-   * @returns {object} effective config, plus `overrides` naming the fields the
-   *   match rule actually set (so the UI can show what is customised)
+   * @param {object} scopes
+   * @param {object} [scopes.team] the followed-team record, if any
+   * @param {object} [scopes.match] the per-match override, if any
+   * @returns {object} effective config, plus `overrides` mapping each
+   *   customised field to the scope that set it, so the UI can show not just
+   *   that something is customised but where it came from
    */
-  function resolveMatchRule(settings, matchRules, matchId) {
+  function resolveRule(settings, scopes) {
     const config = Object.assign(HTA.defaultSettings(), settings || {});
-    const rule = (matchRules && matchId && matchRules[matchId]) || {};
+    const { team, match } = scopes || {};
 
     // `enabled` is the only field whose global counterpart is named differently.
     const effective = {
@@ -50,18 +60,29 @@
       streamPlatform: config.streamPlatform,
       streamCountry: config.streamCountry
     };
-    const overrides = [];
+    const overrides = {};
 
-    for (const key of OVERRIDABLE) {
-      if (isSet(rule[key])) {
-        effective[key] = rule[key];
-        overrides.push(key);
+    // Later scopes win, so apply them in order.
+    for (const [scopeName, scope] of [['team', team], ['match', match]]) {
+      if (!scope) continue;
+      for (const key of OVERRIDABLE) {
+        if (isSet(scope[key])) {
+          effective[key] = scope[key];
+          overrides[key] = scopeName;
+        }
       }
     }
 
     effective.overrides = overrides;
-    effective.hasOverrides = overrides.length > 0;
+    effective.overriddenFields = Object.keys(overrides);
+    effective.hasOverrides = effective.overriddenFields.length > 0;
     return effective;
+  }
+
+  /** Back-compat shim for callers that only know about match scope. */
+  function resolveMatchRule(settings, matchRules, matchId) {
+    const match = (matchRules && matchId && matchRules[matchId]) || null;
+    return resolveRule(settings, { match });
   }
 
   /**
@@ -99,5 +120,12 @@
     return rules;
   }
 
-  HTA.rules = { resolveMatchRule, shouldOpenStream, setMatchRule, clearMatchRule, OVERRIDABLE };
+  HTA.rules = {
+    resolveRule,
+    resolveMatchRule,
+    shouldOpenStream,
+    setMatchRule,
+    clearMatchRule,
+    OVERRIDABLE
+  };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

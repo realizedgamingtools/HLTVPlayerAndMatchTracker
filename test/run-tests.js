@@ -21,6 +21,7 @@ const MODULES = [
   'src/core/normalize.js',
   'src/core/status.js',
   'src/core/matching.js',
+  'src/core/teams.js',
   'src/core/rules.js',
   'src/core/alerts.js',
   'src/core/parser.js',
@@ -81,7 +82,7 @@ test('normalization collapses casing, padding and diacritics', () => {
 /* -------------------------------------------------------------- 2. matching */
 
 test('team matching is exact, not substring', () => {
-  const { buildTeamIndex, matchedTeams, addTeam, removeTeam } = HTA.matching;
+  const { buildTeamIndex, matchedTeams } = HTA.matching;
 
   const index = buildTeamIndex(['Natus Vincere', '  vitality  ']);
   assertEqual(index.size, 2, 'index holds both teams');
@@ -100,15 +101,14 @@ test('team matching is exact, not substring', () => {
   assertEqual(matchedTeams({ team1: 'G2', team2: 'MOUZ' }, index).length, 0, 'unfollowed match');
   assertEqual(matchedTeams({ team1: 'G2', team2: 'MOUZ' }, new Set()).length, 0, 'empty index');
 
-  const added = addTeam(['Vitality'], '  faze  ');
-  assert(added.added, 'adds a new team');
-  assertEqual(added.teams.length, 2, 'list grows');
-
-  const dupe = addTeam(['Vitality'], 'VITALITY');
-  assert(!dupe.added && dupe.reason === 'duplicate', 'rejects case-variant duplicate');
-  assert(!addTeam(['Vitality'], '   ').added, 'rejects blank input');
-
-  assertEqual(removeTeam(['Vitality', 'FaZe'], 'vitality').length, 1, 'removes case-insensitively');
+  // The index is built from followed-team records, so the two stay in step.
+  const records = HTA.teams.followTeam({}, { id: '4608', name: 'Natus Vincere' }, 1);
+  const fromRecords = buildTeamIndex(HTA.teams.teamNames(records));
+  assertEqual(
+    matchedTeams({ team1: 'Natus Vincere', team2: 'FaZe' }, fromRecords).length,
+    1,
+    'index built from team records matches the same way'
+  );
 });
 
 /* ---------------------------------------------------------------- 3. status */
@@ -472,7 +472,8 @@ test('per-match rules override globals field by field', () => {
   assertEqual(resolved.openStream, true, 'override applied');
   assertEqual(resolved.streamPlatform, 'twitch', 'override applied');
   assertEqual(resolved.leadTimeMinutes, 15, 'unset field still inherits');
-  assertEqual(resolved.overrides.length, 2, 'exactly two fields customised');
+  assertEqual(resolved.overriddenFields.length, 2, 'exactly two fields customised');
+  assertEqual(resolved.overrides.openStream, 'match', 'records which scope set the field');
 
   // Moving the global still moves the un-overridden field.
   const movedGlobal = HTA.rules.resolveMatchRule(
@@ -615,7 +616,201 @@ test('per-match rules change what the alert core emits', () => {
   assertEqual(globallyOff.alerts.length, 0, 'master switch cannot be overridden per match');
 });
 
+/* ------------------------------------------------ 10. followed-team model */
+
+test('team identity survives being followed by name then by id', () => {
+  const T = HTA.teams;
+
+  // Followed from the popup: a name and nothing else.
+  let teams = T.followTeam({}, { name: '  Natus Vincere  ' }, 100);
+  assertEqual(Object.keys(teams).length, 1, 'one team followed');
+  assertEqual(Object.keys(teams)[0], 'name:natus vincere', 'keyed by normalized name');
+  assert(T.isFollowed(teams, { name: 'NATUS VINCERE' }), 'found case-insensitively');
+
+  // Give it settings, as the popup or a team page would.
+  teams = T.setTeamRule(teams, { name: 'Natus Vincere' }, { leadTimeMinutes: 30 });
+  assertEqual(T.teamByName(teams, 'natus vincere').leadTimeMinutes, 30, 'rule stored');
+
+  // Now the user opens the profile page, which knows the id. This must upgrade
+  // the record in place -- duplicating it would silently orphan their settings.
+  teams = T.followTeam(teams, { id: '4608', name: 'Natus Vincere', slug: 'natus-vincere' }, 200);
+  assertEqual(Object.keys(teams).length, 1, 'still one team, not two');
+  assertEqual(Object.keys(teams)[0], 'id:4608', 're-keyed by stable id');
+
+  const upgraded = T.teamByName(teams, 'Natus Vincere');
+  assertEqual(upgraded.id, '4608', 'id captured');
+  assertEqual(upgraded.slug, 'natus-vincere', 'slug captured');
+  assertEqual(upgraded.leadTimeMinutes, 30, 'existing settings survived the upgrade');
+  assertEqual(upgraded.followedAt, 100, 'original follow time kept, not reset');
+
+  // Following again from the page is idempotent.
+  const again = T.followTeam(teams, { id: '4608', name: 'Natus Vincere' }, 300);
+  assertEqual(Object.keys(again).length, 1, 'no duplicate on re-follow');
+
+  // A name-only follow must never blank out identity already captured.
+  const nameOnly = T.followTeam(teams, { name: 'Natus Vincere' }, 400);
+  assertEqual(T.teamByName(nameOnly, 'Natus Vincere').id, '4608', 'id retained');
+
+  // Unfollow works from either identity.
+  assertEqual(Object.keys(T.unfollowTeam(teams, { name: 'natus vincere' })).length, 0, 'by name');
+  assertEqual(Object.keys(T.unfollowTeam(teams, { id: '4608' })).length, 0, 'by id');
+
+  // Two genuinely different teams stay separate.
+  let two = T.followTeam({}, { id: '4608', name: 'Natus Vincere' }, 1);
+  two = T.followTeam(two, { id: '9565', name: 'Vitality' }, 2);
+  assertEqual(Object.keys(two).length, 2, 'distinct teams kept apart');
+  assertEqual(T.listTeams(two)[0].name, 'Vitality', 'most recently followed first');
+  assertEqual(T.teamNames(two).length, 2, 'names extracted for the match index');
+
+  // Garbage in does not create phantom records.
+  assertEqual(Object.keys(T.followTeam({}, { name: '   ' }, 1)).length, 0, 'blank name rejected');
+});
+
+test('v1 name-only follows migrate without loss', () => {
+  const T = HTA.teams;
+
+  const migrated = T.migrateFromNames(['Vitality', '  FaZe  ', ''], {}, 500);
+  assertEqual(Object.keys(migrated).length, 2, 'blank entries dropped');
+  assert(T.isFollowed(migrated, { name: 'vitality' }), 'Vitality carried over');
+  assertEqual(T.teamByName(migrated, 'FaZe').name, 'FaZe', 'name normalized for display');
+  assertEqual(T.teamByName(migrated, 'FaZe').id, null, 'no id until the profile is visited');
+
+  // Migration is idempotent: running it twice must not duplicate.
+  const twice = T.migrateFromNames(['Vitality'], migrated, 600);
+  assertEqual(Object.keys(twice).length, 2, 'no duplicates on re-migration');
+});
+
+/* -------------------------------------- 11. global -> team -> match chain */
+
+test('settings resolve down the global, team and match chain', () => {
+  const settings = {
+    teams: [],
+    alertsEnabled: true,
+    leadTimeMinutes: 15,
+    pageAlerts: true,
+    desktopAlerts: true,
+    openStream: false,
+    streamPlatform: 'any',
+    streamCountry: 'any'
+  };
+
+  const bare = HTA.rules.resolveRule(settings, {});
+  assertEqual(bare.leadTimeMinutes, 15, 'inherits global with no scopes');
+  assert(!bare.hasOverrides, 'nothing customised');
+
+  const team = { name: 'Vitality', leadTimeMinutes: 30, openStream: true };
+
+  const teamScoped = HTA.rules.resolveRule(settings, { team });
+  assertEqual(teamScoped.leadTimeMinutes, 30, 'team overrides global');
+  assertEqual(teamScoped.openStream, true, 'team override applied');
+  assertEqual(teamScoped.streamPlatform, 'any', 'unset field still inherits global');
+  assertEqual(teamScoped.overrides.leadTimeMinutes, 'team', 'attributed to the team scope');
+
+  // Match scope is narrower, so it wins over the team.
+  const match = { leadTimeMinutes: 5 };
+  const both = HTA.rules.resolveRule(settings, { team, match });
+  assertEqual(both.leadTimeMinutes, 5, 'match beats team');
+  assertEqual(both.overrides.leadTimeMinutes, 'match', 'attributed to the match scope');
+  assertEqual(both.openStream, true, 'team override survives where match is silent');
+  assertEqual(both.overrides.openStream, 'team', 'still attributed to the team');
+
+  // A zero lead time is a real value at team scope, not "unset".
+  const zero = HTA.rules.resolveRule(settings, { team: { leadTimeMinutes: 0 } });
+  assertEqual(zero.leadTimeMinutes, 0, 'zero overrides rather than reading as absent');
+
+  // Muting one team leaves the global switch alone.
+  const muted = HTA.rules.resolveRule(settings, { team: { enabled: false } });
+  assertEqual(muted.enabled, false, 'team muted');
+  assertEqual(HTA.rules.resolveRule(settings, {}).enabled, true, 'other teams unaffected');
+});
+
+test('team rules drive the alert core', () => {
+  const now = 1700000000000;
+  const settings = {
+    teams: [],
+    alertsEnabled: true,
+    leadTimeMinutes: 5,
+    pageAlerts: true,
+    desktopAlerts: false,
+    openStream: false,
+    streamPlatform: 'any',
+    streamCountry: 'any'
+  };
+  const match = {
+    id: '500',
+    url: '/matches/500/a',
+    team1: 'Vitality',
+    team2: 'FaZe',
+    startTime: now + 20 * 60 * 1000
+  };
+
+  let teams = HTA.teams.followTeam({}, { id: '9565', name: 'Vitality' }, 1);
+
+  // 20 minutes out against a 5-minute global window: silent.
+  const quiet = HTA.alerts.generateAlerts({
+    matches: [match],
+    settings,
+    followedTeams: teams,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(quiet.alerts.length, 0, 'outside the global lead window');
+
+  // A per-team lead time must reclassify, not merely filter.
+  teams = HTA.teams.setTeamRule(teams, { id: '9565' }, { leadTimeMinutes: 30 });
+  const fired = HTA.alerts.generateAlerts({
+    matches: [match],
+    settings,
+    followedTeams: teams,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(fired.alerts.length, 1, 'team lead time widens the window');
+  assertEqual(fired.alerts[0].teamId, '9565', 'alert carries the team id');
+  assertEqual(fired.alerts[0].effective.leadTimeMinutes, 30, 'effective config attached');
+
+  // Muting the team silences it without burning a dedupe key.
+  const mutedTeams = HTA.teams.setTeamRule(teams, { id: '9565' }, { enabled: false });
+  const silenced = HTA.alerts.generateAlerts({
+    matches: [match],
+    settings,
+    followedTeams: mutedTeams,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(silenced.alerts.length, 0, 'muted team stays silent');
+  assertEqual(Object.keys(silenced.sentAlerts).length, 0, 'no key burned');
+
+  // Two followed teams facing each other with different lead times: the one
+  // inside its window alerts, the other does not.
+  let both = HTA.teams.followTeam({}, { id: '9565', name: 'Vitality' }, 1);
+  both = HTA.teams.followTeam(both, { id: '6667', name: 'FaZe' }, 2);
+  both = HTA.teams.setTeamRule(both, { id: '9565' }, { leadTimeMinutes: 30 });
+  both = HTA.teams.setTeamRule(both, { id: '6667' }, { leadTimeMinutes: 5 });
+
+  const split = HTA.alerts.generateAlerts({
+    matches: [match],
+    settings,
+    followedTeams: both,
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(split.alerts.length, 1, 'only the team whose window is open alerts');
+  assertEqual(split.alerts[0].team, 'Vitality', 'the right team');
+
+  // Falls back to the v1 settings.teams list when nothing is migrated yet.
+  const legacy = HTA.alerts.generateAlerts({
+    matches: [Object.assign({}, match, { isLive: true })],
+    settings: Object.assign({}, settings, { teams: ['Vitality'] }),
+    followedTeams: {},
+    now,
+    sentAlerts: {}
+  });
+  assertEqual(legacy.alerts.length, 1, 'v1 name list still works before migration');
+});
+
 /* ----------------------------------------------------------------- report */
+
 
 for (const result of results) {
   if (result.ok) {

@@ -101,8 +101,9 @@
     scanning = true;
     try {
       const now = Date.now();
-      const [settings, matchRules, sentAlerts] = await Promise.all([
+      const [settings, followedTeams, matchRules, sentAlerts] = await Promise.all([
         HTA.storage.getSettings(),
+        HTA.storage.getFollowedTeams(),
         HTA.storage.getMatchRules(),
         HTA.storage.getSentAlerts()
       ]);
@@ -111,6 +112,7 @@
       const { alerts, sentAlerts: nextHistory } = HTA.alerts.generateAlerts({
         matches: parsed.matches,
         settings,
+        followedTeams,
         matchRules,
         now,
         sentAlerts

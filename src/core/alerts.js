@@ -62,12 +62,13 @@
    * @param {object} input
    * @param {Array} input.matches parsed match candidates
    * @param {object} input.settings global user settings
+   * @param {object} input.followedTeams followed-team records, keyed
    * @param {object} input.matchRules per-match overrides, keyed by match id
    * @param {number} input.now epoch ms
    * @param {object} input.sentAlerts dedupeKey -> epoch ms
    * @returns {{alerts: Array, sentAlerts: object, skipped: object}}
    */
-  function generateAlerts({ matches, settings, matchRules, now, sentAlerts }) {
+  function generateAlerts({ matches, settings, followedTeams, matchRules, now, sentAlerts }) {
     const history = pruneHistory(sentAlerts, now);
     const skipped = { disabled: 0, muted: 0, noTeams: 0, notAlertable: 0, duplicate: 0 };
 
@@ -78,7 +79,12 @@
       return { alerts: [], sentAlerts: history, skipped };
     }
 
-    const teamIndex = buildTeamIndex(config.teams);
+    // Team records are the source of truth; settings.teams is the v1 shape and
+    // is only consulted when nothing has been migrated yet.
+    const teams = followedTeams && Object.keys(followedTeams).length > 0 ? followedTeams : null;
+    const names = teams ? HTA.teams.teamNames(teams) : config.teams;
+
+    const teamIndex = buildTeamIndex(names);
     if (teamIndex.size === 0) {
       skipped.noTeams = Array.isArray(matches) ? matches.length : 0;
       return { alerts: [], sentAlerts: history, skipped };
@@ -89,42 +95,46 @@
     const seenThisRun = new Set();
 
     for (const match of Array.isArray(matches) ? matches : []) {
-      // Per-match overrides resolve before classification, because a per-match
-      // lead time changes what counts as starting-soon for this match alone.
-      const effective = HTA.rules.resolveMatchRule(config, matchRules, match && match.id);
-
-      // Global alertsEnabled already short-circuited above, so reaching here
-      // with enabled false means this one match was muted individually.
-      if (!effective.enabled) {
-        skipped.muted += 1;
-        continue;
-      }
-
-      const status = classifyMatch(match, now, effective.leadTimeMinutes);
       const hits = matchedTeams(match, teamIndex);
       if (hits.length === 0) continue;
-      if (!isAlertable(status)) {
-        skipped.notAlertable += 1;
-        continue;
-      }
 
-      const openStream = HTA.rules.shouldOpenStream({ status }, effective);
-
-      // Nothing to deliver on means no alert should be recorded either, or
-      // re-enabling a channel later would find the dedupe key already burned.
-      // Opening a stream counts as delivery, so it keeps the alert alive even
-      // with both notification channels off.
-      const channels = {
-        page: config.pageAlerts === true,
-        desktop: config.desktopAlerts === true,
-        stream: openStream
-      };
-      if (!channels.page && !channels.desktop && !channels.stream) {
-        skipped.disabled += 1;
-        continue;
-      }
+      const matchRule = (matchRules && match && match.id && matchRules[match.id]) || null;
 
       for (const teamName of hits) {
+        // Resolution happens per matched team, not per match: two followed
+        // teams playing each other can want different lead times, and a
+        // per-team lead time changes what counts as starting-soon for that
+        // team alone.
+        const teamRecord = teams ? HTA.teams.teamByName(teams, teamName) : null;
+        const effective = HTA.rules.resolveRule(config, { team: teamRecord, match: matchRule });
+
+        // Global alertsEnabled short-circuited above, so reaching here with
+        // enabled false means this team or match was muted individually.
+        if (!effective.enabled) {
+          skipped.muted += 1;
+          continue;
+        }
+
+        const status = classifyMatch(match, now, effective.leadTimeMinutes);
+        if (!isAlertable(status)) {
+          skipped.notAlertable += 1;
+          continue;
+        }
+
+        // Opening a stream counts as delivery, so it keeps an alert alive even
+        // with both notification channels off. With nothing to deliver on, the
+        // alert is not recorded either -- otherwise re-enabling a channel would
+        // find the dedupe key already burned.
+        const channels = {
+          page: config.pageAlerts === true,
+          desktop: config.desktopAlerts === true,
+          stream: HTA.rules.shouldOpenStream({ status }, effective)
+        };
+        if (!channels.page && !channels.desktop && !channels.stream) {
+          skipped.disabled += 1;
+          continue;
+        }
+
         const key = dedupeKey(match, teamName, status);
         if (key in nextHistory || seenThisRun.has(key)) {
           skipped.duplicate += 1;
@@ -136,6 +146,7 @@
           key,
           match,
           team: teamName,
+          teamId: teamRecord ? teamRecord.id : null,
           status,
           minutesUntil: minutesUntil(match, now),
           channels,

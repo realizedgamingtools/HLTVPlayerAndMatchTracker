@@ -13,7 +13,14 @@
 'use strict';
 
 // Extension-root-relative so resolution does not depend on this file's depth.
-importScripts('/src/shared/constants.js', '/src/shared/storage.js');
+// storage.js migrates v1 follows through core/teams.js, which needs normalize,
+// so both come along even though the worker never calls them directly today.
+importScripts(
+  '/src/shared/constants.js',
+  '/src/core/normalize.js',
+  '/src/core/teams.js',
+  '/src/shared/storage.js'
+);
 
 const HTA = self.HTA;
 const C = HTA.constants;

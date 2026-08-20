@@ -171,7 +171,7 @@
       [
         [INHERIT, 'Use default'],
         [C.ANY, 'Any platform']
-      ].concat(HTA.streams.platformsIn(streams).map((p) => [p, p[0].toUpperCase() + p.slice(1)])),
+      ].concat(HTA.streams.platformsIn(streams).map((p) => [p, C.PLATFORM_LABELS[p] || p])),
       fromStored(rule.streamPlatform)
     );
 

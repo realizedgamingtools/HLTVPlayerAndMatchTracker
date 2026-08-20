@@ -47,6 +47,35 @@
     await local.set({ [C.LOCAL_KEY_SENT_ALERTS]: sentAlerts });
   }
 
+  /**
+   * Followed teams, keyed by identity.
+   *
+   * Reading migrates the v1 `settings.teams` name array on first access and
+   * writes the result back, so an upgrade never silently drops follows. The
+   * old array is left in place: harmless, and it keeps a downgrade working.
+   */
+  async function getFollowedTeams() {
+    const sync = area('sync');
+    if (!sync) return {};
+
+    const stored = await sync.get([C.SYNC_KEY_FOLLOWED_TEAMS, C.SYNC_KEY_SETTINGS]);
+    const teams = (stored && stored[C.SYNC_KEY_FOLLOWED_TEAMS]) || null;
+    if (teams && Object.keys(teams).length > 0) return teams;
+
+    const legacyNames = (stored && stored[C.SYNC_KEY_SETTINGS] && stored[C.SYNC_KEY_SETTINGS].teams) || [];
+    if (legacyNames.length === 0) return teams || {};
+
+    const migrated = HTA.teams.migrateFromNames(legacyNames, {}, Date.now());
+    await sync.set({ [C.SYNC_KEY_FOLLOWED_TEAMS]: migrated });
+    return migrated;
+  }
+
+  async function saveFollowedTeams(teams) {
+    const sync = area('sync');
+    if (!sync) return;
+    await sync.set({ [C.SYNC_KEY_FOLLOWED_TEAMS]: teams });
+  }
+
   /** Per-match overrides. Small and user-authored, so they sync. */
   async function getMatchRules() {
     const sync = area('sync');
@@ -141,6 +170,8 @@
     saveSettings,
     getSentAlerts,
     saveSentAlerts,
+    getFollowedTeams,
+    saveFollowedTeams,
     getMatchRules,
     saveMatchRules,
     getStreamSnapshot,

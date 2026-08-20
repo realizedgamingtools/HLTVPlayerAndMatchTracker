@@ -36,6 +36,7 @@
         "src/core/normalize.js",
         "src/core/status.js",
         "src/core/matching.js",
+        "src/core/teams.js",
         "src/core/rules.js",
         "src/core/alerts.js",
         "src/core/parser.js",
@@ -56,12 +57,30 @@
         "src/shared/constants.js",
         "src/shared/storage.js",
         "src/core/normalize.js",
+        "src/core/teams.js",
         "src/core/rules.js",
         "src/core/streams.js",
         "src/content/match-page.js"
       ],
       "css": [
-        "src/content/match-panel.css"
+        "src/content/panel.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.hltv.org/team/*"
+      ],
+      "js": [
+        "src/shared/constants.js",
+        "src/shared/storage.js",
+        "src/core/normalize.js",
+        "src/core/teams.js",
+        "src/core/rules.js",
+        "src/content/team-page.js"
+      ],
+      "css": [
+        "src/content/panel.css"
       ],
       "run_at": "document_idle"
     }

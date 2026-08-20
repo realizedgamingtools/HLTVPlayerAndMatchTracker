@@ -1,5 +1,6 @@
 /*
- * Match-page control panel.
+ * Injected control panels: the team-page follow panel and the match-page
+ * per-match panel, which share one look.
  *
  * Injected into HLTV's own layout, so every property is set explicitly rather
  * than inherited -- HLTV's stylesheet is not ours to rely on and can change
@@ -7,7 +8,7 @@
  * enough to look deliberate without pretending to be part of HLTV.
  */
 
-#hta-match-panel {
+.hta-panel {
   box-sizing: border-box;
   margin: 0 0 12px;
   padding: 14px 16px;
@@ -22,9 +23,9 @@
   text-align: left;
 }
 
-#hta-match-panel *,
-#hta-match-panel *::before,
-#hta-match-panel *::after {
+.hta-panel *,
+.hta-panel *::before,
+.hta-panel *::after {
   box-sizing: border-box;
 }
 
@@ -150,7 +151,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #hta-match-panel * {
+  .hta-panel * {
     transition: none !important;
   }
+}
+
+/* Team-page panel: the options block is hidden until the team is followed,
+   so the unfollowed state stays a single button and one line of context. */
+.hta-panel__options {
+  margin-top: 12px;
+}
+
+.hta-panel__options[hidden] {
+  display: none;
 }
