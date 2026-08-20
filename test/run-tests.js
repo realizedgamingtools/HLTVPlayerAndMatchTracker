@@ -289,42 +289,63 @@ test('disabled and empty states stay silent without burning dedupe keys', () => 
 
 /* ------------------------------------------------- 6. live-card parsing */
 
-test('parses a representative HLTV matches page', () => {
+test('parses real HLTV markup from both layouts', () => {
   const html = fs.readFileSync(path.join(__dirname, 'fixtures', 'matches-page.html'), 'utf8');
   const doc = parseHTML(html);
-  const now = 1755622800000;
+  const now = 1787223600000;
 
   const result = HTA.parser.parseMatches(doc, now);
-  assertEqual(result.cardsSeen, 4, 'four cards on the page');
+  assertEqual(result.cardsSeen, 4, 'three match-wrappers plus one hotmatch-box');
   assertEqual(result.matches.length, 3, 'TBD placeholder is skipped');
   assert(result.healthy, 'parse reports healthy');
 
-  const live = result.matches.find((m) => m.id === '2380123');
-  assertEqual(live.team1, 'Vitality', 'live card team 1');
-  assertEqual(live.team2, 'FaZe', 'live card team 2');
-  assertEqual(live.isLive, true, 'live card detected');
-  assertEqual(live.startTime, null, 'live card has no scheduled time');
-  assertEqual(live.event, 'BLAST Premier Fall Final 2026', 'live card event');
-  assertEqual(live.format, 'bo3', 'live card format');
+  // -- matches-list layout, scheduled --------------------------------------
+  const scheduled = result.matches.find((m) => m.id === '2396603');
+  assertEqual(scheduled.team1, 'Natus Vincere', 'team 1 name');
+  assertEqual(scheduled.team2, 'Legacy', 'team 2 name');
+  assertEqual(scheduled.team1Id, '4608', 'stable team 1 id captured');
+  assertEqual(scheduled.team2Id, '12468', 'stable team 2 id captured');
+  assertEqual(scheduled.eventId, '8261', 'stable event id captured');
+  assertEqual(scheduled.event, 'Esports World Cup 2026', 'event headline');
+  assertEqual(scheduled.format, 'bo3', 'best-of format');
+  assertEqual(scheduled.lan, true, 'LAN flag');
+  assertEqual(scheduled.startTime, 1787223600000, 'data-unix parsed as epoch ms');
+  assertEqual(scheduled.layout, 'matches-list', 'layout recorded');
   assertEqual(
-    live.url,
-    'https://www.hltv.org/matches/2380123/vitality-vs-faze-blast-premier-fall-final-2026',
+    scheduled.url,
+    'https://www.hltv.org/matches/2396603/natus-vincere-vs-legacy-esports-world-cup-2026',
     'relative href resolved to an absolute URL'
   );
-  assertEqual(live.sourceVersion, C.SOURCE_VERSION, 'source version stamped');
+  assertEqual(scheduled.sourceVersion, C.SOURCE_VERSION, 'source version stamped');
 
-  const upcoming = result.matches.find((m) => m.id === '2380456');
-  assertEqual(upcoming.team1, 'Natus Vincere', 'nbsp in team name normalized');
-  assertEqual(upcoming.isLive, false, 'upcoming card is not live');
-  assertEqual(upcoming.startTime, 1755622800000, 'data-unix parsed as epoch ms');
+  // The regression this fixture exists to prevent: `.matchLive` is a star
+  // rating class on current HLTV and appears on scheduled matches. Treating
+  // it as a live marker would fire a live alert for every rated match.
+  assertEqual(scheduled.isLive, false, 'star-rating .matchLive is not a live signal');
 
-  assert(!result.matches.some((m) => m.id === '2380999'), 'TBD match excluded');
+  // -- matches-list layout, live -------------------------------------------
+  const live = result.matches.find((m) => m.id === '2396604');
+  assertEqual(live.isLive, true, 'live attribute detected');
+  assertEqual(live.team1, 'FaZe', 'live card team 1');
+  assertEqual(live.startTime, null, 'live card has no data-unix');
 
-  // End-to-end: parsed markup drives real alerts.
+  // -- front-page layout ----------------------------------------------------
+  const front = result.matches.find((m) => m.id === '2396651');
+  assertEqual(front.layout, 'front-page', 'hotmatch-box uses the other layout');
+  assertEqual(front.team1, 'G2 Ares', 'front-page team 1');
+  assertEqual(front.team2, 'Bebop', 'front-page team 2');
+  assertEqual(front.team1Id, '12889', 'front-page team id from .teambox');
+  assertEqual(front.event, 'CCT 2026 Europe Series 7', 'event from anchor title');
+  assertEqual(front.isLive, false, 'filteraslive="false" is not live');
+  assertEqual(front.startTime, 1787212800000, 'front-page start time');
+
+  assert(!result.matches.some((m) => m.id === '2396921'), 'TBD match excluded');
+
+  // -- end to end: parsed markup drives real alerts -------------------------
   const alerts = HTA.alerts.generateAlerts({
     matches: result.matches,
     settings: {
-      teams: ['Vitality', 'natus vincere'],
+      teams: ['FaZe', 'natus vincere'],
       alertsEnabled: true,
       leadTimeMinutes: 15,
       pageAlerts: true,
@@ -333,10 +354,18 @@ test('parses a representative HLTV matches page', () => {
     now: now - 10 * 60 * 1000,
     sentAlerts: {}
   });
-  assertEqual(alerts.alerts.length, 2, 'parsed page produces both expected alerts');
+  assertEqual(alerts.alerts.length, 2, 'one live alert and one starting-soon alert');
+  assert(
+    alerts.alerts.some((a) => a.status === C.STATUS_LIVE && a.team === 'FaZe'),
+    'live alert for the live match'
+  );
+  assert(
+    alerts.alerts.some((a) => a.title === 'Natus Vincere plays in 10 min'),
+    'lead-time alert for the scheduled match'
+  );
 
   // An empty parse against a page that clearly had cards must flag unhealthy.
-  const broken = parseHTML('<div class="upcomingMatch"><span>no link, no teams</span></div>');
+  const broken = parseHTML('<div class="match-wrapper"><span>markup changed</span></div>');
   const brokenResult = HTA.parser.parseMatches(broken, now);
   assertEqual(brokenResult.matches.length, 0, 'unparseable card yields no matches');
   assert(!brokenResult.healthy, 'parse failure is visible, not a silent zero');

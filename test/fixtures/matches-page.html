@@ -1,88 +1,43 @@
 <!--
-  Representative slice of an HLTV /matches page.
-  Source version: hltv-2026-08
+  Real HLTV markup, captured 2026-08-19 from https://www.hltv.org/matches and
+  https://www.hltv.org/ (front page). Source version: hltv-2026-08
 
-  Covers the four cases the parser has to get right:
-    1. a live match      -> isLive true, no usable start time
-    2. an upcoming match -> data-unix start time, isLive false
-    3. a second upcoming -> confirms multiple cards parse independently
-    4. a TBD placeholder -> no named teams, must be skipped entirely
+  Only change made to the captured HTML: <img src> values replaced with "#" so
+  the fixture stays readable and pulls no remote assets.
 
-  When HLTV changes its markup, replace this fragment with a fresh copy and
-  bump constants.SOURCE_VERSION.
+  Cards covered:
+    1. matches-list, scheduled, named teams  -> parses, isLive false
+    2. matches-list, TBD placeholder         -> skipped (no named teams)
+    3. matches-list, live                    -> parses, isLive true
+    4. front-page hotmatch-box               -> parses via the other layout
+
+  Card 3 is card 1 with live="true" and the time cell replaced by "LIVE": no
+  match was live at capture time, so the live rendering is derived from the
+  attribute contract rather than observed. Confirm it during a live smoke test.
+
+  NOTE: `.matchLive` below is a STAR RATING class (div.match-rating.matchLive),
+  not a live indicator. It appears on scheduled matches. Live state comes from
+  the wrapper's `live` attribute, and `filteraslive` on the front page.
+
+  To refresh: open the page, copy a `.match-wrapper` outerHTML, paste it here,
+  and bump SOURCE_VERSION if selectors moved.
 -->
 <div class="matches-list">
+  <div class="matches-list-section">
 
-  <div class="liveMatch-container" team1="4608" team2="6667">
-    <div class="liveMatch">
-      <a href="/matches/2380123/vitality-vs-faze-blast-premier-fall-final-2026" class="match a-reset">
-        <div class="matchTeams text-ellipsis">
-          <div class="matchTeam team1">
-            <div class="matchTeamLogoContainer"><img class="matchTeamLogo" src="/img/static/team/4608.png"></div>
-            <div class="matchTeamName text-ellipsis">Vitality</div>
-          </div>
-          <div class="matchTeam team2">
-            <div class="matchTeamLogoContainer"><img class="matchTeamLogo" src="/img/static/team/6667.png"></div>
-            <div class="matchTeamName text-ellipsis">FaZe</div>
-          </div>
-        </div>
-        <div class="matchTime matchLive"><span class="matchLiveSpan">LIVE</span></div>
-        <div class="matchMeta">bo3</div>
-        <div class="matchEvent">
-          <div class="matchEventName gtSmartphone-only">BLAST Premier Fall Final 2026</div>
-        </div>
-      </a>
-    </div>
+    <!-- 1. Scheduled match with named teams. -->
+    <div class="match-wrapper" data-match-wrapper="" data-match-id="2396603" data-stars="2" data-event-id="8261" data-eventtype="ranked" data-region="Europe" lan="true" live="false" team1="4608" team2="12468" data-pinned="false"><div class="match"><a href="/matches/2396603/natus-vincere-vs-legacy-esports-world-cup-2026" class="match-top a-reset plausible-event-name=Matches+click+time+match"><div class="match-event" data-event-headline="Esports World Cup 2026" data-event-id="8261"><div class="match-event-logo-container"><img alt="Esports World Cup 2026" src="#" class="match-event-logo day-only" title="Esports World Cup 2026" height="10" width="10"><img alt="Esports World Cup 2026" src="#" class="match-event-logo night-only" title="Esports World Cup 2026" height="10" width="10"></div>Esports World Cup 2026<div class="match-stage match-other-playoff ">Playoffs</div></div><div class="match-rating matchLive"><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star faded"></i><i class="fa fa-star faded"></i><i class="fa fa-star faded"></i></div></a><div class="match-bottom"><a href="/matches/2396603/natus-vincere-vs-legacy-esports-world-cup-2026" class="match-info a-reset plausible-event-name=Matches+click+time+match"><div class="match-time" data-time-format="HH:mm" data-unix="1787223600000">06:00</div><div class="match-meta">bo3</div></a><a href="/matches/2396603/natus-vincere-vs-legacy-esports-world-cup-2026" class="match-teams text-ellipsis a-reset plausible-event-name=Matches+click+time+match"><div class="match-team team1"><div class="match-team-logo-container"><img alt="Natus Vincere" src="#" class="match-team-logo" title="Natus Vincere" height="15" width="15" loading="lazy"></div><div class="match-teamname text-ellipsis">Natus Vincere</div></div><div class="match-team team2"><div class="match-team-logo-container"><img alt="Legacy" src="#" class="match-team-logo" title="Legacy" height="15" width="15" loading="lazy"></div><div class="match-teamname text-ellipsis">Legacy</div></div></a><div class="match-fixtures-placeholder" data-match-id="2396603"></div><div class="match-btn-wrapper"><a href="/betting/analytics/2396603/natus-vincere-vs-legacy-esports-world-cup-2026" class="match-btn match-analytics-btn" title="Odds &amp; prediction for match"><i class="fa fa-bar-chart"></i></a></div></div></div></div>
+
+    <!-- 2. TBD placeholder: link and time, but no named teams. Must be skipped. -->
+    <div class="match-wrapper" data-match-wrapper="" data-match-id="2396921" data-stars="0" data-event-id="9262" data-eventtype="ranked" data-region="Europe" lan="false" live="false" team1="" team2="" data-pinned="false"><div class="match"><a href="/matches/2396921/esl-challenger-league-season-52-europe-cup-4-3rd-place-decider-match-esl-challenger-league-season-52-europe-cup-4" class="match-top a-reset plausible-event-name=Matches+click+time+match"><div class="match-event" data-event-headline="ESL Challenger League Season 52 Europe Cup 4" data-event-id="9262"><div class="match-event-logo-container"><img alt="ESL Challenger League Season 52 Europe Cup 4" src="#" class="match-event-logo day-only" title="ESL Challenger League Season 52 Europe Cup 4" height="10" width="10"></div>ESL Challenger League Season 52 Europe Cup 4<div class="match-stage match-pre-playoff "></div></div></a><div class="match-bottom"><a href="/matches/2396921/esl-challenger-league-season-52-europe-cup-4-3rd-place-decider-match-esl-challenger-league-season-52-europe-cup-4" class="match-info a-reset plausible-event-name=Matches+click+time+match"><div class="match-time" data-time-format="HH:mm" data-unix="1787245200000">12:00</div><div class="match-meta">bo3</div></a><a href="/matches/2396921/esl-challenger-league-season-52-europe-cup-4-3rd-place-decider-match-esl-challenger-league-season-52-europe-cup-4" class="match-no-info plausible-event-name=Matches+click+time+match"><span class="line-clamp-3">ESL Challenger League Season 52 Europe Cup 4 - 3rd Place Decider Match</span></a><div class="match-fixtures-placeholder" data-match-id="2396921"></div><div class="match-btn-wrapper"></div></div></div></div>
+
+    <!-- 3. Live match (derived: live="true", time cell reads LIVE). -->
+    <div class="match-wrapper" data-match-wrapper="" data-match-id="2396604" data-stars="4" data-event-id="8261" data-eventtype="ranked" data-region="Europe" lan="true" live="true" team1="6667" team2="9565" data-pinned="false"><div class="match"><a href="/matches/2396604/faze-vs-vitality-esports-world-cup-2026" class="match-top a-reset plausible-event-name=Matches+click+time+match"><div class="match-event" data-event-headline="Esports World Cup 2026" data-event-id="8261"><div class="match-event-logo-container"><img alt="Esports World Cup 2026" src="#" class="match-event-logo day-only" title="Esports World Cup 2026" height="10" width="10"></div>Esports World Cup 2026<div class="match-stage match-other-playoff ">Playoffs</div></div><div class="match-rating matchLive"><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star faded"></i></div></a><div class="match-bottom"><a href="/matches/2396604/faze-vs-vitality-esports-world-cup-2026" class="match-info a-reset plausible-event-name=Matches+click+time+match"><div class="match-time" data-time-format="HH:mm">LIVE</div><div class="match-meta">bo3</div></a><a href="/matches/2396604/faze-vs-vitality-esports-world-cup-2026" class="match-teams text-ellipsis a-reset plausible-event-name=Matches+click+time+match"><div class="match-team team1"><div class="match-team-logo-container"><img alt="FaZe" src="#" class="match-team-logo" title="FaZe" height="15" width="15" loading="lazy"></div><div class="match-teamname text-ellipsis">FaZe</div></div><div class="match-team team2"><div class="match-team-logo-container"><img alt="Vitality" src="#" class="match-team-logo" title="Vitality" height="15" width="15" loading="lazy"></div><div class="match-teamname text-ellipsis">Vitality</div></div></a><div class="match-fixtures-placeholder" data-match-id="2396604"></div></div></div></div>
+
   </div>
+</div>
 
-  <div class="upcomingMatch" team1="4608" team2="7175" stars="2">
-    <a href="/matches/2380456/natus-vincere-vs-spirit-iem-cologne-2026" class="match a-reset">
-      <div class="matchTeams text-ellipsis">
-        <div class="matchTeam team1">
-          <div class="matchTeamName text-ellipsis">Natus&nbsp;Vincere</div>
-        </div>
-        <div class="matchTeam team2">
-          <div class="matchTeamName text-ellipsis">Team Spirit</div>
-        </div>
-      </div>
-      <div class="matchTime" data-unix="1755622800000">17:00</div>
-      <div class="matchMeta">bo3</div>
-      <div class="matchEvent">
-        <div class="matchEventName gtSmartphone-only">IEM Cologne 2026</div>
-      </div>
-    </a>
-  </div>
-
-  <div class="upcomingMatch" team1="9565" team2="10503" stars="1">
-    <a href="/matches/2380789/g2-vs-mouz-esl-pro-league-season-25" class="match a-reset">
-      <div class="matchTeams text-ellipsis">
-        <div class="matchTeam team1">
-          <div class="matchTeamName text-ellipsis">G2</div>
-        </div>
-        <div class="matchTeam team2">
-          <div class="matchTeamName text-ellipsis">MOUZ</div>
-        </div>
-      </div>
-      <div class="matchTime" data-unix="1755720600000">20:10</div>
-      <div class="matchMeta">bo1</div>
-      <div class="matchEvent">
-        <div class="matchEventName gtSmartphone-only">ESL Pro League Season 25</div>
-      </div>
-    </a>
-  </div>
-
-  <div class="upcomingMatch" stars="0">
-    <a href="/matches/2380999/tbd-vs-tbd-iem-cologne-2026" class="match a-reset">
-      <div class="matchTeams text-ellipsis">
-        <div class="matchTeam team1"></div>
-        <div class="matchTeam team2"></div>
-      </div>
-      <div class="matchTime" data-unix="1755730000000">22:00</div>
-      <div class="matchMeta">bo3</div>
-      <div class="matchEvent">
-        <div class="matchEventName gtSmartphone-only">IEM Cologne 2026</div>
-      </div>
-    </a>
-  </div>
-
+<!-- 4. Front-page strip: the other layout, older markup, different live flag. -->
+<div class="hotmatch-boxes">
+  <a href="/matches/2396651/g2-ares-vs-bebop-cct-2026-europe-series-7" class="hotmatch-box a-reset " title="CCT 2026 Europe Series 7"><div class="teambox match  star0-filter star0  " stars="0" lan="false" filteraslive="false" team1="12889" team2="13613" style="display: flex;"><div class="teamrows"><div class="teamrow"><img alt="Europe" src="#" class="flag" title="Europe"> <span class="team">G2 Ares</span></div><div class="teamrow"><img alt="Russia" src="#" class="flag" title="Russia"> <span class="team">Bebop</span></div></div><div class="middleExtra" data-time-format="HH:mm" data-unix="1787212800000">03:00</div></div></a>
 </div>
