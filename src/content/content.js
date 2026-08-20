@@ -87,16 +87,30 @@
     if (fresh.size === 0) return 0;
 
     const going = HTA.players.playersGoingLive(followedPlayers, fresh, liveStreams);
+    if (going.length === 0) return 0;
+
+    // The live-set diff stops a still-live stream re-alerting, but it is per
+    // tab: two tabs that both read the baseline before either writes it will
+    // both see the same channel as newly live. Running these through the same
+    // delivery history the match alerts use adds the second line of defence,
+    // and survives the baseline being lost to a restart or a storage clear.
+    const history = HTA.alerts.pruneHistory(await HTA.storage.getSentAlerts(), now);
+    const delivered = {};
     let fired = 0;
 
     for (const { player, channel, stream } of going) {
+      const key = `stream|${HTA.streamers.channelKey(channel.platform, channel.channel)}|live`;
+      if (key in history) continue;
+      history[key] = now;
+      delivered[key] = now;
+
       const url = HTA.streamers.watchUrl(channel);
       const viewers =
         stream && typeof stream.viewers === 'number'
           ? ` — ${stream.viewers.toLocaleString()} watching`
           : '';
       const alert = {
-        key: `stream|${HTA.streamers.channelKey(channel.platform, channel.channel)}|live`,
+        key,
         title: `${player.nickname} is streaming`,
         body: `${player.nickname} went live on ${C.PLATFORM_LABELS[channel.platform] || channel.platform}${viewers}`,
         status: C.STATUS_STREAM_LIVE,
@@ -122,6 +136,7 @@
       fired += 1;
     }
 
+    if (fired > 0) await persistDeliveries(delivered, now);
     return fired;
   }
 

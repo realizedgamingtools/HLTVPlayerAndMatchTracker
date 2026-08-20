@@ -165,6 +165,14 @@ non-HLTV ones reject, which achieves the same thing without the permission.
 Nothing is sent anywhere — there is no project server, and settings live in your
 browser's own extension storage.
 
+## Testing without waiting
+
+Most paths here are triggered by something happening on HLTV, which makes them
+awkward to test on demand. [docs/TESTING.md](docs/TESTING.md) has recipes that
+fake the *source data* rather than the logic — injecting markup in HLTV's own
+shape into a real page, then letting the real content script parse, diff and
+deliver it. Both recipes in that file are verified working.
+
 ## Development
 
 No dependencies and no build step. Node is used only to run the tests.
@@ -234,7 +242,13 @@ Before this is treated as shipped:
 - [x] Confirm following a player captures their id, team and personal channel,
       and that the going-live detector fires on the offline -> live edge only.
 - [ ] Confirm a notification click opens the right match.
-- [ ] Confirm no duplicate alerts across a reload and two open HLTV tabs.
+- [x] Confirm no duplicate alerts across a reload and two open HLTV tabs.
+      Tested by injecting the same going-live event into two tabs and scanning
+      both at once: it fired twice, because stream alerts were relying on the
+      live-set diff alone and both tabs read the baseline before either wrote
+      it. They now run through the same delivery history match alerts use,
+      which brought it to one. The window is narrowed, not closed — a single
+      background scanner (Phase 3) is what actually removes the race.
 - [ ] Repeat the above in Edge.
 
 Verified against the live site:
