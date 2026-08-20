@@ -13,28 +13,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const zlib = require('node:zlib');
+const { crc32 } = require('./lib/crc32');
 
 /* ------------------------------------------------------------ PNG encoding */
-
-const CRC_TABLE = (() => {
-  const table = new Int32Array(256);
-  for (let n = 0; n < 256; n += 1) {
-    let c = n;
-    for (let k = 0; k < 8; k += 1) {
-      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    }
-    table[n] = c;
-  }
-  return table;
-})();
-
-function crc32(buffer) {
-  let crc = -1;
-  for (let i = 0; i < buffer.length; i += 1) {
-    crc = CRC_TABLE[(crc ^ buffer[i]) & 0xff] ^ (crc >>> 8);
-  }
-  return (crc ^ -1) >>> 0;
-}
 
 function chunk(type, data) {
   const length = Buffer.alloc(4);

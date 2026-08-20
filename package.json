@@ -1,0 +1,16 @@
+{
+  "name": "hltv-team-alert",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chrome/Edge extension that alerts you when the Counter-Strike teams you follow go live or are about to play on HLTV.",
+  "scripts": {
+    "test": "node test/run-tests.js",
+    "validate": "node tools/validate.js",
+    "icons": "node tools/make-icons.js",
+    "package": "node tools/package.js",
+    "check": "node tools/validate.js && node test/run-tests.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
