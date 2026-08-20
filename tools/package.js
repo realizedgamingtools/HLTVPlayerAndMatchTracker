@@ -3,7 +3,7 @@
  *
  *   node tools/package.js
  *
- * Writes dist/realized-hltv-extension-<version>.zip with manifest.json at the archive
+ * Writes dist/hltv-player-match-tracker-<version>.zip with manifest.json at the archive
  * root, which is what Chrome and Edge expect. Runs the release checks first so
  * a broken manifest cannot be packaged.
  *
@@ -126,7 +126,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'u
 
 const distDir = path.join(ROOT, 'dist');
 fs.mkdirSync(distDir, { recursive: true });
-const outputPath = path.join(distDir, `realized-hltv-extension-${manifest.version}.zip`);
+const outputPath = path.join(distDir, `hltv-player-match-tracker-${manifest.version}.zip`);
 fs.writeFileSync(outputPath, buildZip(entries));
 
 const size = fs.statSync(outputPath).size;

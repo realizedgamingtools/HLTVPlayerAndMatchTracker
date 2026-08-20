@@ -1,4 +1,4 @@
-# Realized HLTV Extension — Project Brief
+# Player & Match Tracker for HLTV — Project Brief
 
 Product context, current implementation, target architecture, and delivery roadmap.
 
@@ -15,7 +15,7 @@ Product context, current implementation, target architecture, and delivery roadm
 
 ## 1. Executive summary
 
-Realized HLTV Extension is a Chrome and Edge extension that notifies a user when a
+Player & Match Tracker for HLTV is a Chrome and Edge extension that notifies a user when a
 selected Counter-Strike team is live or approaching a scheduled match on HLTV.
 The v1.0 prototype proves the core interaction: users add team names in the
 extension popup, an HLTV content script scans visible match data, and the

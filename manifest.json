@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Realized HLTV Extension",
+  "name": "Player & Match Tracker for HLTV",
   "version": "1.2.0",
-  "description": "Get notified when the Counter-Strike teams you follow go live or are about to play on HLTV.",
+  "description": "Follow Counter-Strike teams and players on HLTV. Get alerted when they play or go live, and pop the stream open.",
   "minimum_chrome_version": "102",
   "permissions": [
     "storage",
@@ -12,7 +12,7 @@
     "service_worker": "src/background/service-worker.js"
   },
   "action": {
-    "default_title": "Realized HLTV Extension",
+    "default_title": "Player & Match Tracker for HLTV",
     "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

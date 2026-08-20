@@ -109,7 +109,7 @@
     const panel = document.createElement('section');
     panel.id = PANEL_ID;
     panel.className = 'hta-panel';
-    panel.setAttribute('aria-label', `Realized HLTV Extension settings for ${name}`);
+    panel.setAttribute('aria-label', `Player & Match Tracker for HLTV settings for ${name}`);
 
     // Header carries the extension's name so the panel never reads as one of
     // HLTV's own controls.
@@ -123,7 +123,7 @@
     logo.className = 'hta-panel__logo';
     logo.src = chrome.runtime.getURL('icons/icon48.png');
     logo.alt = '';
-    brand.append(logo, document.createTextNode('Realized HLTV Extension'));
+    brand.append(logo, document.createTextNode('Realized Tools'));
 
     const badge = document.createElement('span');
     badge.className = 'hta-panel__badge';
@@ -289,5 +289,5 @@
     refresh();
   }
 
-  build().catch((error) => console.warn('[Realized HLTV Extension] team panel failed', error));
+  build().catch((error) => console.warn('[HLTV Tracker] team panel failed', error));
 })(typeof globalThis !== 'undefined' ? globalThis : self);

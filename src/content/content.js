@@ -48,7 +48,7 @@
       const snapshot = await HTA.storage.getStreamSnapshot(matchId);
       if (snapshot && Array.isArray(snapshot.streams)) streams = snapshot.streams;
     } catch (error) {
-      console.warn('[Realized HLTV Extension] could not read stream snapshot', error);
+      console.warn('[HLTV Tracker] could not read stream snapshot', error);
     }
 
     const resolved = HTA.streams.resolveStreamUrl({
@@ -211,7 +211,7 @@
     } catch (error) {
       // A parse or storage failure must not kill the interval; the next pass
       // gets a fresh chance, and the popup surfaces the failure.
-      console.warn('[Realized HLTV Extension] scan failed', error);
+      console.warn('[HLTV Tracker] scan failed', error);
       await HTA.storage
         .saveLastScan({
           at: Date.now(),

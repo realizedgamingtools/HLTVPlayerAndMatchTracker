@@ -106,7 +106,7 @@
       try {
         await HTA.storage.saveStreamSnapshot(matchId, streams, now);
       } catch (error) {
-        console.warn('[Realized HLTV Extension] could not save stream snapshot', error);
+        console.warn('[HLTV Tracker] could not save stream snapshot', error);
       }
     }
 
@@ -121,7 +121,7 @@
     const panel = document.createElement('section');
     panel.id = PANEL_ID;
     panel.className = 'hta-panel';
-    panel.setAttribute('aria-label', 'Realized HLTV Extension settings for this match');
+    panel.setAttribute('aria-label', 'Player & Match Tracker for HLTV settings for this match');
 
     // Same header shape as the team panel: the extension names itself rather
     // than passing for one of HLTV's own controls.
@@ -135,7 +135,7 @@
     logo.className = 'hta-panel__logo';
     logo.src = chrome.runtime.getURL('icons/icon48.png');
     logo.alt = '';
-    brand.append(logo, document.createTextNode('Realized HLTV Extension'));
+    brand.append(logo, document.createTextNode('Realized Tools'));
 
     const badge = document.createElement('span');
     badge.className = 'hta-panel__badge';
@@ -324,5 +324,5 @@
     refresh();
   }
 
-  build().catch((error) => console.warn('[Realized HLTV Extension] match panel failed', error));
+  build().catch((error) => console.warn('[HLTV Tracker] match panel failed', error));
 })(typeof globalThis !== 'undefined' ? globalThis : self);

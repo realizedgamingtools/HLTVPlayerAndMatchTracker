@@ -127,7 +127,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .catch((error) => {
         // Most often the OS or browser has notifications switched off. The
         // on-page toast still fired, so this is reported, not thrown.
-        console.warn('[Realized HLTV Extension] desktop notification failed', error);
+        console.warn('[HLTV Tracker] desktop notification failed', error);
         sendResponse({ ok: false, error: String((error && error.message) || error) });
       });
     return true; // async response
@@ -137,7 +137,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     openStreamWindow(message.target || {})
       .then(sendResponse)
       .catch((error) => {
-        console.warn('[Realized HLTV Extension] stream popup failed', error);
+        console.warn('[HLTV Tracker] stream popup failed', error);
         sendResponse({ ok: false, error: String((error && error.message) || error) });
       });
     return true; // async response

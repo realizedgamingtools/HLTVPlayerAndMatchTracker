@@ -151,9 +151,10 @@
 
       const name = document.createElement('span');
       name.className = 'team-list__name';
-      name.textContent = `Match ${matchId} — ${resolved.overrides.length} setting${
-        resolved.overrides.length === 1 ? '' : 's'
-      }`;
+      // overrides maps field -> the scope that set it; overriddenFields is the
+      // list. Reading .length off the map yielded "undefined settings".
+      const count = resolved.overriddenFields.length;
+      name.textContent = `Match ${matchId} — ${count} setting${count === 1 ? '' : 's'}`;
 
       const remove = document.createElement('button');
       remove.type = 'button';
@@ -164,7 +165,6 @@
         matchRules = HTA.rules.clearMatchRule(matchRules, matchId);
         await HTA.storage.saveMatchRules(matchRules);
         renderMatchRules();
-    renderPlayers();
         renderStreamPrefs();
       });
 
@@ -383,7 +383,7 @@
     } catch (error) {
       el.scanHint.textContent = 'Scan failed. Reload the HLTV tab and try again.';
       el.scanHint.classList.add('hint--warn');
-      console.warn('[Realized HLTV Extension] manual scan failed', error);
+      console.warn('[HLTV Tracker] manual scan failed', error);
     } finally {
       el.scanNow.disabled = false;
       renderStatus();
@@ -406,7 +406,7 @@
 
     const sample = {
       key: `test:${Date.now()}`,
-      title: 'Test alert — Realized HLTV Extension',
+      title: 'Test alert — Realized Tools',
       body: 'If you can see this, alerts are working.',
       status: C.STATUS_LIVE,
       url: 'https://www.hltv.org/matches'
@@ -454,16 +454,18 @@
   /* ----------------------------------------------------------------- boot */
 
   (async function init() {
-    [settings, followedTeams, matchRules] = await Promise.all([
+    [settings, followedTeams, matchRules, followedPlayers] = await Promise.all([
       HTA.storage.getSettings(),
       HTA.storage.getFollowedTeams(),
-      HTA.storage.getMatchRules()
+      HTA.storage.getMatchRules(),
+      HTA.storage.getFollowedPlayers()
     ]);
     el.alertsEnabled.checked = settings.alertsEnabled;
     el.pageAlerts.checked = settings.pageAlerts;
     el.desktopAlerts.checked = settings.desktopAlerts;
     renderLeadTimes();
     renderTeams();
+    renderPlayers();
     renderStreamPrefs();
     renderMatchRules();
     renderChannelHint();

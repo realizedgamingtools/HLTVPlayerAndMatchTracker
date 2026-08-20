@@ -1,5 +1,5 @@
 /**
- * Dependency-free test runner for Realized HLTV Extension.
+ * Dependency-free test runner for Player & Match Tracker for HLTV.
  *
  *   node test/run-tests.js
  *

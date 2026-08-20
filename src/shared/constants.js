@@ -1,5 +1,5 @@
 /**
- * Shared constants for Realized HLTV Extension.
+ * Shared constants for Player & Match Tracker for HLTV.
  *
  * Loaded as a classic script in the content script world, imported via
  * importScripts() in the service worker, and executed directly by the Node

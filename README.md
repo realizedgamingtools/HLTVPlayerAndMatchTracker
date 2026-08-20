@@ -1,4 +1,4 @@
-# Realized HLTV Extension
+# Player & Match Tracker for HLTV
 
 A Chrome and Edge extension that tells you when the Counter-Strike teams you
 follow are live or about to play on [HLTV](https://www.hltv.org/).
