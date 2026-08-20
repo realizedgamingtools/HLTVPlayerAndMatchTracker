@@ -25,6 +25,8 @@
     openStream: document.getElementById('open-stream'),
     streamPlatform: document.getElementById('stream-platform'),
     streamCountry: document.getElementById('stream-country'),
+    playerList: document.getElementById('player-list'),
+    playerEmpty: document.getElementById('player-empty'),
     ruleList: document.getElementById('rule-list'),
     ruleEmpty: document.getElementById('rule-empty'),
     statusList: document.getElementById('status-list'),
@@ -36,6 +38,7 @@
 
   let settings = HTA.defaultSettings();
   let matchRules = {};
+  let followedPlayers = {};
   let followedTeams = {};
 
   /* ------------------------------------------------------------ rendering */
@@ -161,11 +164,56 @@
         matchRules = HTA.rules.clearMatchRule(matchRules, matchId);
         await HTA.storage.saveMatchRules(matchRules);
         renderMatchRules();
+    renderPlayers();
         renderStreamPrefs();
       });
 
       item.append(name, remove);
       el.ruleList.appendChild(item);
+    }
+  }
+
+  /**
+   * Followed players, with what each one is watched for.
+   *
+   * Players are followed from their HLTV profile rather than typed here --
+   * only the profile carries their id, team and personal channels -- so this
+   * lists them and offers removal without pretending to be an entry point.
+   */
+  function renderPlayers() {
+    el.playerList.replaceChildren();
+    const players = HTA.players.listPlayers(followedPlayers);
+    el.playerEmpty.hidden = players.length > 0;
+
+    for (const player of players) {
+      const item = document.createElement('li');
+      item.className = 'team-list__item';
+
+      const name = document.createElement('span');
+      name.className = 'team-list__name';
+
+      const watching = [];
+      if (player.alertOnMatch !== false && player.teamName) watching.push(player.teamName);
+      if (player.alertOnStream !== false && (player.channels || []).length > 0) {
+        watching.push(player.channels[0].channel);
+      }
+      name.textContent = watching.length > 0
+        ? `${player.nickname} — ${watching.join(', ')}`
+        : `${player.nickname} — no alerts on`;
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'team-list__remove';
+      remove.textContent = '×';
+      remove.setAttribute('aria-label', `Unfollow ${player.nickname}`);
+      remove.addEventListener('click', async () => {
+        followedPlayers = HTA.players.unfollowPlayer(followedPlayers, player);
+        await HTA.storage.saveFollowedPlayers(followedPlayers);
+        renderPlayers();
+      });
+
+      item.append(name, remove);
+      el.playerList.appendChild(item);
     }
   }
 

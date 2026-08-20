@@ -7,10 +7,11 @@ Add the teams you care about, leave an HLTV tab open, and get an on-page toast
 or a desktop notification when one of them qualifies — and, if you want it, the
 match's live stream popped open in its own window.
 
-**Status:** v1.2.0. Loaded and exercised in Chrome 151 against the live site:
-following, per-team settings, the on-page toast, the desktop notification and
-the stream popup window are all confirmed working. Live-match *detection*
-remains the one unverified path — see [Release gates](#release-gates).
+**Status:** v1.2.0. Loaded and exercised in Chrome 151 against the live site.
+Following teams and players, per-team settings, the on-page toast, the desktop
+notification, the stream popup window and live-match detection are all confirmed
+working against real HLTV data — see [Release gates](#release-gates) for what is
+still open.
 
 ---
 
@@ -226,9 +227,12 @@ Before this is treated as shipped:
 - [x] Confirm the on-page toast and the desktop notification both fire.
 - [x] Confirm the stream popup opens, reuses its window for the same match, and
       opens a separate one for a different match.
-- [ ] **Confirm live-match detection.** No match has been live during any test
-      session, so the live branch is still derived from the `live` attribute
-      contract rather than observed. This is the one untested path.
+- [x] **Confirm live-match detection.** Done on 2026-08-20 with 8 matches live
+      on `/matches`: `Nordic Valor vs MAYBE` parsed, classified `live`, and the
+      alert core produced "Nordic Valor is LIVE" with the correct event and
+      match URL. The live branch is now observed rather than inferred.
+- [x] Confirm following a player captures their id, team and personal channel,
+      and that the going-live detector fires on the offline -> live edge only.
 - [ ] Confirm a notification click opens the right match.
 - [ ] Confirm no duplicate alerts across a reload and two open HLTV tabs.
 - [ ] Repeat the above in Edge.
