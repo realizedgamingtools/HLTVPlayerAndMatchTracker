@@ -67,6 +67,64 @@
       .catch(() => {});
   }
 
+  /**
+   * Alert for followed players whose own channel just came online.
+   *
+   * Runs off the live-streams sidebar every HLTV page carries, comparing this
+   * scan's live set against the previous one. Only the offline -> live edge
+   * alerts: a stream stays up for hours, so alerting on "is live" would fire
+   * every 30 seconds.
+   */
+  async function deliverPlayerStreams(liveStreams, settings, now) {
+    const followedPlayers = await HTA.storage.getFollowedPlayers();
+    if (Object.keys(followedPlayers).length === 0) return 0;
+
+    const currentKeys = HTA.streamers.liveChannelKeys(liveStreams);
+    const previousKeys = await HTA.storage.getLiveChannels();
+    await HTA.storage.saveLiveChannels(currentKeys, now);
+
+    const fresh = HTA.streamers.newlyLive(previousKeys, currentKeys);
+    if (fresh.size === 0) return 0;
+
+    const going = HTA.players.playersGoingLive(followedPlayers, fresh, liveStreams);
+    let fired = 0;
+
+    for (const { player, channel, stream } of going) {
+      const url = HTA.streamers.watchUrl(channel);
+      const viewers =
+        stream && typeof stream.viewers === 'number'
+          ? ` — ${stream.viewers.toLocaleString()} watching`
+          : '';
+      const alert = {
+        key: `stream|${HTA.streamers.channelKey(channel.platform, channel.channel)}|live`,
+        title: `${player.nickname} is streaming`,
+        body: `${player.nickname} went live on ${C.PLATFORM_LABELS[channel.platform] || channel.platform}${viewers}`,
+        status: C.STATUS_STREAM_LIVE,
+        url
+      };
+
+      if (settings.pageAlerts) HTA.notifier.showToast(alert);
+      if (settings.desktopAlerts) {
+        chrome.runtime.sendMessage({ type: C.MSG_DESKTOP_NOTIFY, alert }).catch(() => {});
+      }
+
+      // A player's own stream honours their per-player setting, falling back to
+      // the global one, so following someone does not force a window open.
+      const effective = HTA.rules.resolveRule(settings, { team: player });
+      if (effective.openStream === true && url) {
+        chrome.runtime
+          .sendMessage({
+            type: C.MSG_OPEN_STREAM,
+            target: { matchId: `player:${player.id || player.nickname}`, url }
+          })
+          .catch(() => {});
+      }
+      fired += 1;
+    }
+
+    return fired;
+  }
+
   async function deliver(alert) {
     if (alert.channels.page) {
       HTA.notifier.showToast(alert);
@@ -101,24 +159,38 @@
     scanning = true;
     try {
       const now = Date.now();
-      const [settings, followedTeams, matchRules, sentAlerts] = await Promise.all([
+      const [settings, followedTeams, followedPlayers, matchRules, sentAlerts] = await Promise.all([
         HTA.storage.getSettings(),
         HTA.storage.getFollowedTeams(),
+        HTA.storage.getFollowedPlayers(),
         HTA.storage.getMatchRules(),
         HTA.storage.getSentAlerts()
       ]);
 
+      // A followed player's team is watched as though it were followed
+      // directly, so "alert me about s1mple" covers NAVI's fixtures without
+      // the user also having to follow NAVI.
+      const watched = Object.assign({}, followedTeams);
+      for (const name of HTA.players.teamNamesToWatch(followedPlayers)) {
+        if (!HTA.teams.findTeam(watched, { name })) {
+          Object.assign(watched, HTA.teams.followTeam(watched, { name }, now));
+        }
+      }
+
       const parsed = HTA.parser.parseMatches(document, now);
+      const liveStreams = HTA.streamers.parseLiveStreams(document);
       const { alerts, sentAlerts: nextHistory } = HTA.alerts.generateAlerts({
         matches: parsed.matches,
         settings,
-        followedTeams,
+        followedTeams: watched,
         matchRules,
         now,
         sentAlerts
       });
 
       for (const alert of alerts) await deliver(alert);
+
+      const streamAlerts = await deliverPlayerStreams(liveStreams, settings, now);
 
       if (alerts.length > 0) await persistDeliveries(nextHistory, now);
 
@@ -130,6 +202,8 @@
         matchesParsed: parsed.matches.length,
         healthy: parsed.healthy,
         alertsFired: alerts.length,
+        streamAlertsFired: streamAlerts,
+        liveStreamsSeen: liveStreams.length,
         sourceVersion: C.SOURCE_VERSION
       };
       await HTA.storage.saveLastScan(record);

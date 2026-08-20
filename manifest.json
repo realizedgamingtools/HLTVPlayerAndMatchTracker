@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Realized HLTV Extension",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Get notified when the Counter-Strike teams you follow go live or are about to play on HLTV.",
   "minimum_chrome_version": "102",
   "permissions": [
@@ -39,6 +39,8 @@
         "src/core/status.js",
         "src/core/matching.js",
         "src/core/teams.js",
+        "src/core/streamers.js",
+        "src/core/players.js",
         "src/core/rules.js",
         "src/core/alerts.js",
         "src/core/parser.js",
@@ -80,6 +82,25 @@
         "src/core/teams.js",
         "src/core/rules.js",
         "src/content/team-page.js"
+      ],
+      "css": [
+        "src/content/panel.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.hltv.org/player/*"
+      ],
+      "js": [
+        "src/shared/constants.js",
+        "src/core/normalize.js",
+        "src/core/streamers.js",
+        "src/core/players.js",
+        "src/core/rules.js",
+        "src/core/teams.js",
+        "src/shared/storage.js",
+        "src/content/player-page.js"
       ],
       "css": [
         "src/content/panel.css"

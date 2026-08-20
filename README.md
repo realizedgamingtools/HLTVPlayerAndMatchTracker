@@ -7,7 +7,7 @@ Add the teams you care about, leave an HLTV tab open, and get an on-page toast
 or a desktop notification when one of them qualifies — and, if you want it, the
 match's live stream popped open in its own window.
 
-**Status:** v1.1.0. Loaded and exercised in Chrome 151 against the live site:
+**Status:** v1.2.0. Loaded and exercised in Chrome 151 against the live site:
 following, per-team settings, the on-page toast, the desktop notification and
 the stream popup window are all confirmed working. Live-match *detection*
 remains the one unverified path — see [Release gates](#release-gates).
@@ -53,6 +53,30 @@ Click the toolbar icon to open the popup:
   notification paths, so you can confirm delivery works without waiting for a
   followed team to actually play.
 
+### Following a player
+
+Open any player's profile and the same panel appears under their name. Following
+them covers two separate things, each with its own switch:
+
+- **When their team plays** — their current team is watched as though you had
+  followed it directly, so following a player is enough; you do not also have to
+  follow their org. The team is re-read on every profile visit, so a transfer
+  stops alerting for the roster they left.
+- **When they go live** — their own channel, taken from the broadcast links on
+  their profile. Non-broadcast socials are ignored.
+
+Personal-stream alerts need no extra permission and no Twitch API key. Every
+HLTV page carries a "Top streams" sidebar listing who is broadcasting right now,
+with the channel in each entry's embed URL, so the same open tab that scans for
+matches also tells us who is live. Matching is on the channel rather than the
+displayed label, because HLTV shows names like `chopper` for a channel actually
+called `chopperinho`.
+
+Alerts fire on the moment a stream comes online, not while it is online — a
+broadcast stays up for hours, and the latter would re-fire every scan. That
+means the first scan after install stays quiet on purpose: with no previous
+state to compare against, every live channel would look newly live.
+
 ### Per-match settings
 
 Open any match page on HLTV and a panel appears above the stream list. It sets
@@ -85,7 +109,10 @@ HLTV page  ->  source adapter  ->  match candidates  ->  alert core  ->  channel
 | --- | --- |
 | `src/core/parser.js` | The **only** file that knows HLTV markup. Emits normalized match candidates. |
 | `src/core/streams.js` | Parses a match page's stream list and picks one by preference. |
-| `src/core/rules.js` | Resolves per-match overrides against global settings. |
+| `src/core/rules.js` | Resolves overrides down the global -> team -> match chain. |
+| `src/core/teams.js` | Followed-team records, identity and v1 migration. |
+| `src/core/players.js` | Followed players, their team and their personal channels. |
+| `src/core/streamers.js` | The live-streams sidebar, and offline -> live transitions. |
 | `src/core/normalize.js` | Comparison keys for team names. |
 | `src/core/status.js` | Classifies a match as live, starting-soon, scheduled or past. |
 | `src/core/matching.js` | Decides which followed teams a match involves. |

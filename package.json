@@ -1,6 +1,6 @@
 {
   "name": "realized-hltv-extension",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Chrome/Edge extension that alerts you when the Counter-Strike teams you follow go live or are about to play on HLTV.",
   "scripts": {
