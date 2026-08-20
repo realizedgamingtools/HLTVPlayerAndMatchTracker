@@ -27,6 +27,7 @@
     /** Storage keys. Preferences sync, delivery state stays local. */
     SYNC_KEY_SETTINGS: 'settings',
     LOCAL_KEY_SENT_ALERTS: 'sentAlerts',
+    LOCAL_KEY_LAST_SCAN: 'lastScan',
     SESSION_KEY_NOTIFICATION_TARGETS: 'notificationTargets',
 
     /** Alert statuses emitted by the alert core. */

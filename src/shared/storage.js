@@ -47,6 +47,23 @@
     await local.set({ [C.LOCAL_KEY_SENT_ALERTS]: sentAlerts });
   }
 
+  /**
+   * Health record for the popup: when the last scan ran and what it saw.
+   * Written by whichever tab scanned most recently.
+   */
+  async function getLastScan() {
+    const local = area('local');
+    if (!local) return null;
+    const stored = await local.get(C.LOCAL_KEY_LAST_SCAN);
+    return (stored && stored[C.LOCAL_KEY_LAST_SCAN]) || null;
+  }
+
+  async function saveLastScan(record) {
+    const local = area('local');
+    if (!local) return;
+    await local.set({ [C.LOCAL_KEY_LAST_SCAN]: record });
+  }
+
   /** Remember where a desktop notification should navigate when clicked. */
   async function rememberNotificationTarget(notificationId, url) {
     const session = area('session') || area('local');
@@ -75,6 +92,8 @@
     saveSettings,
     getSentAlerts,
     saveSentAlerts,
+    getLastScan,
+    saveLastScan,
     rememberNotificationTarget,
     takeNotificationTarget
   };

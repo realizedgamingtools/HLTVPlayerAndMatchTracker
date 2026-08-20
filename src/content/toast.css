@@ -1,0 +1,114 @@
+/*
+ * On-page alert toasts.
+ *
+ * Injected into HLTV pages, so every rule is namespaced under .hta-* and the
+ * stack is fixed-positioned out of the document flow. Nothing here should be
+ * able to reflow HLTV's own layout.
+ */
+
+.hta-toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(340px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.hta-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 8px;
+  border-left: 4px solid #f5a623;
+  background: #1b2733;
+  color: #f2f5f8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  animation: hta-toast-in 180ms ease-out;
+}
+
+.hta-toast--live {
+  border-left-color: #e4483d;
+}
+
+.hta-toast__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.hta-toast__title {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hta-toast__text {
+  margin: 0;
+  color: #b9c4cf;
+  overflow-wrap: anywhere;
+}
+
+.hta-toast__link {
+  display: inline-block;
+  margin-top: 6px;
+  color: #7fb2ff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.hta-toast__link:hover,
+.hta-toast__link:focus-visible {
+  text-decoration: underline;
+}
+
+.hta-toast__dismiss {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #8d9aa7;
+  font-size: 16px;
+  line-height: 22px;
+  cursor: pointer;
+}
+
+.hta-toast__dismiss:hover,
+.hta-toast__dismiss:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f2f5f8;
+}
+
+.hta-toast__link:focus-visible,
+.hta-toast__dismiss:focus-visible {
+  outline: 2px solid #7fb2ff;
+  outline-offset: 2px;
+}
+
+@keyframes hta-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Respect a reduced-motion preference: appear, do not slide. */
+@media (prefers-reduced-motion: reduce) {
+  .hta-toast {
+    animation: none;
+  }
+}

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>HLTV Team Alert</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="header">
+      <h1 class="header__title">HLTV Team Alert</h1>
+      <label class="switch">
+        <input type="checkbox" id="alerts-enabled" />
+        <span class="switch__label">Alerts on</span>
+      </label>
+    </header>
+
+    <main>
+      <section class="section" aria-labelledby="teams-heading">
+        <h2 class="section__heading" id="teams-heading">Followed teams</h2>
+
+        <form class="add-team" id="add-team-form">
+          <label class="visually-hidden" for="team-input">Team name</label>
+          <input
+            type="text"
+            id="team-input"
+            class="add-team__input"
+            placeholder="Exact team name, e.g. Vitality"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="submit" class="button button--primary">Add</button>
+        </form>
+
+        <p class="hint" id="add-team-hint" role="status" aria-live="polite"></p>
+
+        <ul class="team-list" id="team-list"></ul>
+        <p class="empty" id="team-empty" hidden>
+          No teams yet. Add a name exactly as HLTV spells it.
+        </p>
+      </section>
+
+      <section class="section" aria-labelledby="alert-heading">
+        <h2 class="section__heading" id="alert-heading">When to alert</h2>
+
+        <div class="field">
+          <label class="field__label" for="lead-time">Remind me before a match starts</label>
+          <select id="lead-time" class="field__select"></select>
+        </div>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset__legend">Deliver alerts via</legend>
+          <label class="check">
+            <input type="checkbox" id="page-alerts" />
+            <span>On-page toast</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="desktop-alerts" />
+            <span>Desktop notification</span>
+          </label>
+        </fieldset>
+        <p class="hint" id="channel-hint" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="section" aria-labelledby="status-heading">
+        <h2 class="section__heading" id="status-heading">Status</h2>
+        <dl class="status" id="status-list"></dl>
+        <button type="button" class="button button--wide" id="scan-now">Scan now</button>
+        <p class="hint" id="scan-hint" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Scans open HLTV tabs every 30 seconds. Settings stay in your browser.
+      </p>
+      <p class="footer__disclaimer">Not affiliated with or endorsed by HLTV.org.</p>
+    </footer>
+
+    <script src="../shared/constants.js"></script>
+    <script src="../shared/storage.js"></script>
+    <script src="../core/normalize.js"></script>
+    <script src="../core/matching.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
