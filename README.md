@@ -1,4 +1,4 @@
-# HLTV Team Alert
+# Realized HLTV Extension
 
 A Chrome and Edge extension that tells you when the Counter-Strike teams you
 follow are live or about to play on [HLTV](https://www.hltv.org/).
@@ -7,9 +7,10 @@ Add the teams you care about, leave an HLTV tab open, and get an on-page toast
 or a desktop notification when one of them qualifies — and, if you want it, the
 match's live stream popped open in its own window.
 
-**Status:** v1.1.0. Everything below is implemented and tested, but the
-extension has not yet been loaded into a real browser against a live match.
-See [Release gates](#release-gates) before treating it as shipped.
+**Status:** v1.1.0. Loaded and exercised in Chrome 151 against the live site:
+following, per-team settings, the on-page toast, the desktop notification and
+the stream popup window are all confirmed working. Live-match *detection*
+remains the one unverified path — see [Release gates](#release-gates).
 
 ---
 
@@ -29,7 +30,7 @@ To build a store-style archive instead:
 node tools/package.js
 ```
 
-That writes `dist/hltv-team-alert-<version>.zip` with `manifest.json` at the
+That writes `dist/realized-hltv-extension-<version>.zip` with `manifest.json` at the
 archive root, after running the release checks.
 
 ## Using it
@@ -192,17 +193,30 @@ quiet day must not look the same.
 
 Before this is treated as shipped:
 
-- [ ] Load the unpacked extension in Chrome and Edge and confirm it starts clean.
-- [ ] Follow a team, confirm the toast and the desktop notification both fire.
-- [ ] **Confirm live-match rendering.** No match was live when the adapter was
-      built, so the live branch is derived from the `live`/`filteraslive`
-      attribute contract rather than observed. This is the one untested path.
+- [x] Load the unpacked extension in Chrome and confirm it starts clean.
+- [x] Follow a team from its profile, confirm the record stores id, name and
+      slug, and that per-team settings round-trip through storage.
+- [x] Confirm the on-page toast and the desktop notification both fire.
+- [x] Confirm the stream popup opens, reuses its window for the same match, and
+      opens a separate one for a different match.
+- [ ] **Confirm live-match detection.** No match has been live during any test
+      session, so the live branch is still derived from the `live` attribute
+      contract rather than observed. This is the one untested path.
 - [ ] Confirm a notification click opens the right match.
 - [ ] Confirm no duplicate alerts across a reload and two open HLTV tabs.
+- [ ] Repeat the above in Edge.
 
-Verified so far: the adapter was run against the live `/matches` DOM and parsed
-36 of 183 cards — every match with named teams, the rest being TBD placeholders
-— with no missing start times, team ids or event names.
+Verified against the live site:
+
+- the adapter parsed 36 of 183 cards on `/matches` — every match with named
+  teams, the rest being TBD placeholders — and 56 of 205 on a later run
+- one match page carried 27 external streams across Twitch, YouTube and Kick in
+  11 languages, all extracted with platform, language and viewer count
+- the team panel injected on a real profile, and Follow -> per-team lead time ->
+  storage -> the popup's team list round-tripped end to end
+
+Note that `--load-extension` is ignored by Chrome 137+, so automated loading
+goes through the DevTools `Extensions.loadUnpacked` command instead.
 
 ## Known limitations
 

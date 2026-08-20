@@ -335,7 +335,7 @@
     } catch (error) {
       el.scanHint.textContent = 'Scan failed. Reload the HLTV tab and try again.';
       el.scanHint.classList.add('hint--warn');
-      console.warn('[HLTV Team Alert] manual scan failed', error);
+      console.warn('[Realized HLTV Extension] manual scan failed', error);
     } finally {
       el.scanNow.disabled = false;
       renderStatus();
@@ -358,7 +358,7 @@
 
     const sample = {
       key: `test:${Date.now()}`,
-      title: 'Test alert — HLTV Team Alert',
+      title: 'Test alert — Realized HLTV Extension',
       body: 'If you can see this, alerts are working.',
       status: C.STATUS_LIVE,
       url: 'https://www.hltv.org/matches'

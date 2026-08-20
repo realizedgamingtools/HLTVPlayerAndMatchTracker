@@ -106,7 +106,7 @@
       try {
         await HTA.storage.saveStreamSnapshot(matchId, streams, now);
       } catch (error) {
-        console.warn('[HLTV Team Alert] could not save stream snapshot', error);
+        console.warn('[Realized HLTV Extension] could not save stream snapshot', error);
       }
     }
 
@@ -121,7 +121,7 @@
     const panel = document.createElement('section');
     panel.id = PANEL_ID;
     panel.className = 'hta-panel';
-    panel.setAttribute('aria-label', 'HLTV Team Alert settings for this match');
+    panel.setAttribute('aria-label', 'Realized HLTV Extension settings for this match');
 
     // Same header shape as the team panel: the extension names itself rather
     // than passing for one of HLTV's own controls.
@@ -130,7 +130,7 @@
 
     const brand = document.createElement('p');
     brand.className = 'hta-panel__brand';
-    brand.textContent = 'HLTV Team Alert';
+    brand.textContent = 'Realized HLTV Extension';
 
     const badge = document.createElement('span');
     badge.className = 'hta-panel__badge';
@@ -319,5 +319,5 @@
     refresh();
   }
 
-  build().catch((error) => console.warn('[HLTV Team Alert] match panel failed', error));
+  build().catch((error) => console.warn('[Realized HLTV Extension] match panel failed', error));
 })(typeof globalThis !== 'undefined' ? globalThis : self);

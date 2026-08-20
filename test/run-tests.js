@@ -1,5 +1,5 @@
 /**
- * Dependency-free test runner for HLTV Team Alert.
+ * Dependency-free test runner for Realized HLTV Extension.
  *
  *   node test/run-tests.js
  *

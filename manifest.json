@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "HLTV Team Alert",
+  "name": "Realized HLTV Extension",
   "version": "1.1.0",
   "description": "Get notified when the Counter-Strike teams you follow go live or are about to play on HLTV.",
   "minimum_chrome_version": "102",
@@ -12,7 +12,7 @@
     "service_worker": "src/background/service-worker.js"
   },
   "action": {
-    "default_title": "HLTV Team Alert",
+    "default_title": "Realized HLTV Extension",
     "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

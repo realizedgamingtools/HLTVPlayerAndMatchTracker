@@ -1,5 +1,5 @@
 /**
- * Shared constants for HLTV Team Alert.
+ * Shared constants for Realized HLTV Extension.
  *
  * Loaded as a classic script in the content script world, imported via
  * importScripts() in the service worker, and executed directly by the Node

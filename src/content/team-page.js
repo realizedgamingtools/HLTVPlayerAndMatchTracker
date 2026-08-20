@@ -109,7 +109,7 @@
     const panel = document.createElement('section');
     panel.id = PANEL_ID;
     panel.className = 'hta-panel';
-    panel.setAttribute('aria-label', `HLTV Team Alert settings for ${name}`);
+    panel.setAttribute('aria-label', `Realized HLTV Extension settings for ${name}`);
 
     // Header carries the extension's name so the panel never reads as one of
     // HLTV's own controls.
@@ -118,7 +118,7 @@
 
     const brand = document.createElement('p');
     brand.className = 'hta-panel__brand';
-    brand.textContent = 'HLTV Team Alert';
+    brand.textContent = 'Realized HLTV Extension';
 
     const badge = document.createElement('span');
     badge.className = 'hta-panel__badge';
@@ -284,5 +284,5 @@
     refresh();
   }
 
-  build().catch((error) => console.warn('[HLTV Team Alert] team panel failed', error));
+  build().catch((error) => console.warn('[Realized HLTV Extension] team panel failed', error));
 })(typeof globalThis !== 'undefined' ? globalThis : self);
