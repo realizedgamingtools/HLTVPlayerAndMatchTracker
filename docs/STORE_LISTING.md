@@ -100,7 +100,7 @@ account, which is not collection by the extension.
 copy:
 
 ```
-https://github.com/realizedgamingtools/HLTVStreamPopup/blob/main/PRIVACY.md
+https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/blob/main/PRIVACY.md
 ```
 
 ### Permission justifications

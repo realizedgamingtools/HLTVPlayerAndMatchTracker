@@ -1,6 +1,6 @@
 # Player & Match Tracker for HLTV
 
-[![CI](https://github.com/realizedgamingtools/HLTVStreamPopup/actions/workflows/ci.yml/badge.svg)](https://github.com/realizedgamingtools/HLTVStreamPopup/actions/workflows/ci.yml)
+[![CI](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/actions/workflows/ci.yml)
 
 A Chrome and Edge extension that tells you when the Counter-Strike teams you
 follow are live or about to play on [HLTV](https://www.hltv.org/).
