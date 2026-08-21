@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # 18 is the floor declared in package.json engines; 22 is current LTS.
+        # Running both is what keeps that declaration honest rather than
+        # aspirational -- the project has no dependencies, so the only thing
+        # that can break across versions is our own use of the Node API.
+        node: ['18', '22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # No install step: the extension and its tooling are dependency-free by
+      # design, so there is nothing to restore and no lockfile to drift.
+
+      - name: Release checks
+        run: node tools/validate.js
+
+      - name: Tests
+        run: node test/run-tests.js
+
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    needs: check
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build the store archive
+        run: node tools/package.js
+
+      # Every green commit leaves behind an uploadable zip, so shipping never
+      # depends on remembering to build one locally first.
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 30
