@@ -1,6 +1,6 @@
 {
   "name": "hltv-player-match-tracker",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": true,
   "description": "Chrome/Edge extension that alerts you when the Counter-Strike teams you follow go live or are about to play on HLTV.",
   "scripts": {

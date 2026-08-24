@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Player & Match Tracker for HLTV",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Follow Counter-Strike teams and players on HLTV. Get alerted when they play or go live, and pop the stream open.",
   "minimum_chrome_version": "102",
   "permissions": [
