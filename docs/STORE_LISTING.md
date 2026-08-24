@@ -143,7 +143,7 @@ when ready — no resubmission of the package required.
 
 | Asset | Requirement | Status |
 | --- | --- | --- |
-| Store icon | 128×128 PNG | `icons/icon128.png` |
+| Store icon | 128×128 PNG | `icons/icon128.png` — scope on a screen |
 | Screenshots | 1280×800 or 640×400, 1–5, at least one required | `docs/store/` |
 | Small promo tile | 440×280, optional | not made |
 | Marquee tile | 1400×560, optional | not made |

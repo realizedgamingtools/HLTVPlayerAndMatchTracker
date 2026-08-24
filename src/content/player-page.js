@@ -126,7 +126,7 @@
 
     const logo = document.createElement('img');
     logo.className = 'hta-panel__logo';
-    logo.src = chrome.runtime.getURL('icons/icon48.png');
+    logo.src = chrome.runtime.getURL('icons/brand48.png');
     logo.alt = '';
     brand.append(logo, document.createTextNode('Realized Tools'));
 

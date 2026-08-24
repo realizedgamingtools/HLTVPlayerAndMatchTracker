@@ -111,7 +111,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/icon48.png"
+        "icons/brand48.png"
       ],
       "matches": [
         "https://www.hltv.org/*"
