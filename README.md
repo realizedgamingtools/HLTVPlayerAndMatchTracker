@@ -1,6 +1,7 @@
 # Player & Match Tracker for HLTV
 
 [![CI](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/actions/workflows/ci.yml)
+[![Release Please](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/actions/workflows/release-please.yml/badge.svg)](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/actions/workflows/release-please.yml)
 
 A Chrome and Edge extension that tells you when the Counter-Strike teams you
 follow are live or about to play on [HLTV](https://www.hltv.org/).
@@ -9,7 +10,7 @@ Add the teams you care about, leave an HLTV tab open, and get an on-page toast
 or a desktop notification when one of them qualifies — and, if you want it, the
 match's live stream popped open in its own window.
 
-**Status:** v1.2.0. Loaded and exercised in Chrome 151 against the live site.
+**Status:** v1.2.2. Loaded and exercised in Chrome 151 against the live site.
 Following teams and players, per-team settings, the on-page toast, the desktop
 notification, the stream popup window and live-match detection are all confirmed
 working against real HLTV data — see [Release gates](#release-gates) for what is
@@ -27,14 +28,34 @@ still open.
 
 Requires Chrome 102+ or a matching Chromium-based Edge.
 
+See [CHANGELOG.md](CHANGELOG.md) for the reconstructed project history and
+automatically maintained release notes.
+
 To build a store-style archive instead:
 
 ```bash
 node tools/package.js
 ```
 
-That writes `dist/realized-hltv-extension-<version>.zip` with `manifest.json` at the
+That writes `dist/hltv-player-match-tracker-<version>.zip` with `manifest.json` at the
 archive root, after running the release checks.
+
+## Releases
+
+[Release Please](https://github.com/googleapis/release-please) maintains the
+release pull request, `CHANGELOG.md`, version tags, and GitHub Releases. Use
+[Conventional Commit](https://www.conventionalcommits.org/) titles for commits
+merged to `main`, especially:
+
+- `fix: correct live-match detection` for a patch release;
+- `feat: add tournament filters` for a minor release;
+- `feat!: replace the stored-settings format` for a breaking major release.
+
+Scopes are optional, for example `fix(parser): handle postponed matches`.
+Documentation, tests, build, CI, refactors, and maintenance changes are also
+recorded when their titles begin with `docs:`, `test:`, `build:`, `ci:`,
+`refactor:`, or `chore:`. Merging the generated release pull request publishes
+the corresponding tag and GitHub Release.
 
 ## Using it
 
