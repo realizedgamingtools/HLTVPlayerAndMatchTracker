@@ -24,6 +24,7 @@
     channelHint: document.getElementById('channel-hint'),
     openStream: document.getElementById('open-stream'),
     streamPlatform: document.getElementById('stream-platform'),
+    streamFallbackPlatform: document.getElementById('stream-fallback-platform'),
     streamCountry: document.getElementById('stream-country'),
     playerList: document.getElementById('player-list'),
     playerEmpty: document.getElementById('player-empty'),
@@ -117,6 +118,17 @@
       el.streamPlatform.appendChild(option);
     }
     el.streamPlatform.value = settings.streamPlatform || C.ANY;
+
+    el.streamFallbackPlatform.replaceChildren();
+    for (const [value, label] of [[C.ANY, 'Biggest available']].concat(
+      C.STREAM_PLATFORMS.map((p) => [p, C.PLATFORM_LABELS[p] || p])
+    )) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      el.streamFallbackPlatform.appendChild(option);
+    }
+    el.streamFallbackPlatform.value = settings.streamFallbackPlatform || C.ANY;
 
     el.streamCountry.replaceChildren();
     const pinned = new Set(
@@ -328,6 +340,7 @@
 
   for (const [key, node] of [
     ['streamPlatform', el.streamPlatform],
+    ['streamFallbackPlatform', el.streamFallbackPlatform],
     ['streamCountry', el.streamCountry]
   ]) {
     node.addEventListener('change', async () => {

@@ -86,14 +86,19 @@
         </div>
 
         <div class="field">
+          <label class="field__label" for="stream-fallback-platform">Backup platform</label>
+          <select id="stream-fallback-platform" class="field__select"></select>
+        </div>
+
+        <div class="field">
           <label class="field__label" for="stream-country">Preferred language</label>
           <select id="stream-country" class="field__select"></select>
         </div>
 
         <p class="hint">
-          Preferences, not filters: if nobody is broadcasting on your pick, the
-          biggest available stream opens instead. Set any match individually on
-          its own HLTV page.
+          If the preferred platform is unavailable, the backup is tried next,
+          then the biggest available stream. Set any match individually on its
+          own HLTV page.
         </p>
 
         <ul class="team-list" id="rule-list"></ul>

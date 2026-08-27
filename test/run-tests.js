@@ -416,6 +416,19 @@ test('parses real HLTV stream markup and picks by preference', () => {
   assertEqual(onTwitch.stream.platform, 'twitch', 'platform preference honoured');
   assert(!onTwitch.fellBack.platform, 'no fallback when the platform exists');
 
+  const onBackup = HTA.streams.pickStream(streams, {
+    streamPlatform: 'other',
+    streamFallbackPlatform: 'youtube'
+  });
+  assertEqual(onBackup.stream.platform, 'youtube', 'backup platform used when primary is absent');
+  assert(onBackup.fellBack.platform, 'primary-platform fallback reported');
+
+  const noPreferredPlatforms = HTA.streams.pickStream(streams, {
+    streamPlatform: 'other',
+    streamFallbackPlatform: 'facebook'
+  });
+  assertEqual(noPreferredPlatforms.stream.name, 'gaules', 'biggest stream wins after both choices fail');
+
   const english = HTA.streams.pickStream(streams, { streamCountry: 'United Kingdom' });
   assertEqual(english.stream.name, 'ESL TV B', 'language preference honoured');
 

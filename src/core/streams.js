@@ -129,7 +129,7 @@
    * Choose the stream to open.
    *
    * @param {Array} streams
-   * @param {{streamPlatform?: string, streamCountry?: string}} prefs
+   * @param {{streamPlatform?: string, streamFallbackPlatform?: string, streamCountry?: string}} prefs
    * @returns {{stream: object|null, fellBack: {platform: boolean, country: boolean}}}
    */
   function pickStream(streams, prefs) {
@@ -138,6 +138,7 @@
     if (all.length === 0) return { stream: null, fellBack };
 
     const wantPlatform = (prefs && prefs.streamPlatform) || C.ANY;
+    const fallbackPlatform = (prefs && prefs.streamFallbackPlatform) || C.ANY;
     const wantCountry = (prefs && prefs.streamCountry) || C.ANY;
 
     let pool = all;
@@ -147,7 +148,14 @@
       // Preference, not a filter: an unavailable platform must not mean no
       // stream at all, or a Kick-only match would open nothing.
       if (onPlatform.length > 0) pool = onPlatform;
-      else fellBack.platform = true;
+      else {
+        fellBack.platform = true;
+        const onFallback =
+          fallbackPlatform !== C.ANY && fallbackPlatform !== wantPlatform
+            ? pool.filter((s) => s.platform === fallbackPlatform)
+            : [];
+        if (onFallback.length > 0) pool = onFallback;
+      }
     }
 
     if (wantCountry !== C.ANY) {
