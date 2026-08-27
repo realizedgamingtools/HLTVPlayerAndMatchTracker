@@ -60,8 +60,15 @@
       const item = document.createElement('li');
       item.className = 'team-list__item';
 
-      const name = document.createElement('span');
+      const profileUrl = HTA.teams.profileUrl(team);
+      const name = document.createElement(profileUrl ? 'a' : 'span');
       name.className = 'team-list__name';
+      if (profileUrl) {
+        name.href = profileUrl;
+        name.target = '_blank';
+        name.rel = 'noopener noreferrer';
+        name.title = `Open ${team.name} on HLTV`;
+      }
       const resolved = HTA.rules.resolveRule(settings, { team });
       const custom = resolved.overriddenFields.length;
       name.textContent = custom > 0 ? `${team.name} · ${custom} custom` : team.name;
@@ -201,8 +208,15 @@
       const item = document.createElement('li');
       item.className = 'team-list__item';
 
-      const name = document.createElement('span');
+      const profileUrl = HTA.players.profileUrl(player);
+      const name = document.createElement(profileUrl ? 'a' : 'span');
       name.className = 'team-list__name';
+      if (profileUrl) {
+        name.href = profileUrl;
+        name.target = '_blank';
+        name.rel = 'noopener noreferrer';
+        name.title = `Open ${player.nickname} on HLTV`;
+      }
 
       const watching = [];
       if (player.alertOnMatch !== false && player.teamName) watching.push(player.teamName);

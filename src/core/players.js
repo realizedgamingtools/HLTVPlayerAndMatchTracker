@@ -139,6 +139,15 @@
     });
   }
 
+  /** Direct HLTV profile URL when the stable id is known. */
+  function profileUrl(player) {
+    if (!player || player.id === null || player.id === undefined || String(player.id) === '') {
+      return null;
+    }
+    const slug = player.slug || normalizeTeamName(player.nickname).replace(/\s+/g, '-');
+    return `https://www.hltv.org/player/${encodeURIComponent(player.id)}/${encodeURIComponent(slug || 'player')}`;
+  }
+
   /** Team names to watch because a followed player plays for them. */
   function teamNamesToWatch(followedPlayers) {
     const names = [];
@@ -183,6 +192,7 @@
     unfollowPlayer,
     setPlayerRule,
     listPlayers,
+    profileUrl,
     teamNamesToWatch,
     playersGoingLive
   };

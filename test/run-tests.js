@@ -655,6 +655,11 @@ test('team identity survives being followed by name then by id', () => {
   const upgraded = T.teamByName(teams, 'Natus Vincere');
   assertEqual(upgraded.id, '4608', 'id captured');
   assertEqual(upgraded.slug, 'natus-vincere', 'slug captured');
+  assertEqual(
+    T.profileUrl(upgraded),
+    'https://www.hltv.org/team/4608/natus-vincere',
+    'profile URL built from stable identity'
+  );
   assertEqual(upgraded.leadTimeMinutes, 30, 'existing settings survived the upgrade');
   assertEqual(upgraded.followedAt, 100, 'original follow time kept, not reset');
 
@@ -679,6 +684,7 @@ test('team identity survives being followed by name then by id', () => {
 
   // Garbage in does not create phantom records.
   assertEqual(Object.keys(T.followTeam({}, { name: '   ' }, 1)).length, 0, 'blank name rejected');
+  assertEqual(T.profileUrl({ name: 'Vitality' }), null, 'name-only follows have no guessed URL');
 });
 
 test('v1 name-only follows migrate without loss', () => {
@@ -935,6 +941,11 @@ test('following a player captures identity, team and personal channels', () => {
   assertEqual(s1mple.teamName, 'BC.Game', 'current team captured');
   assertEqual(s1mple.channels.length, 1, 'only broadcast platforms are kept');
   assertEqual(s1mple.channels[0].channel, 's1mple', 'twitch channel extracted');
+  assertEqual(
+    HTA.players.profileUrl(s1mple),
+    'https://www.hltv.org/player/7998/s1mple',
+    'player profile URL built from stable identity'
+  );
   assert(s1mple.alertOnMatch && s1mple.alertOnStream, 'both interests start on');
 
   assert(HTA.players.isFollowed(players, { id: '7998' }), 'followed by id');

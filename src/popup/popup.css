@@ -179,6 +179,16 @@ body {
   font-weight: 600;
 }
 
+a.team-list__name {
+  color: var(--link);
+  text-decoration: none;
+}
+
+a.team-list__name:hover,
+a.team-list__name:focus-visible {
+  text-decoration: underline;
+}
+
 .team-list__remove {
   flex: none;
   padding: 2px 7px;

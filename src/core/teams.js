@@ -127,6 +127,15 @@
       .filter(Boolean);
   }
 
+  /** Direct HLTV profile URL when the stable id is known. */
+  function profileUrl(team) {
+    if (!team || team.id === null || team.id === undefined || String(team.id) === '') {
+      return null;
+    }
+    const slug = team.slug || normalizeTeamName(team.name).replace(/\s+/g, '-');
+    return `https://www.hltv.org/team/${encodeURIComponent(team.id)}/${encodeURIComponent(slug || 'team')}`;
+  }
+
   /** The record whose name matches a parsed match card's team label. */
   function teamByName(followedTeams, name) {
     const normalized = normalizeTeamName(name);
@@ -162,6 +171,7 @@
     setTeamRule,
     listTeams,
     teamNames,
+    profileUrl,
     teamByName,
     migrateFromNames
   };

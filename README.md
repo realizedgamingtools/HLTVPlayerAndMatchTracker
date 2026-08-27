@@ -63,7 +63,8 @@ Click the toolbar icon to open the popup:
 
 - **Followed teams** — add a team by its exact HLTV name (`Vitality`, not
   `Team Vitality`). Matching ignores case, padding and diacritics but is
-  otherwise exact, so `NAVI` will not match `NAVI Junior`.
+  otherwise exact, so `NAVI` will not match `NAVI Junior`. Teams followed from
+  an HLTV profile link back to that profile from the popup.
 - **When to alert** — pick how far ahead of a match start you want warning, and
   whether alerts arrive as on-page toasts, desktop notifications, or both.
 - **Status** — when the last scan ran, how many matches were recognised, and
@@ -94,6 +95,8 @@ with the channel in each entry's embed URL, so the same open tab that scans for
 matches also tells us who is live. Matching is on the channel rather than the
 displayed label, because HLTV shows names like `chopper` for a channel actually
 called `chopperinho`.
+
+Followed player names in the popup link back to their HLTV profiles.
 
 Alerts fire on the moment a stream comes online, not while it is online — a
 broadcast stays up for hours, and the latter would re-fire every scan. That
