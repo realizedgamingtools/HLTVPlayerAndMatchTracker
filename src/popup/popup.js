@@ -245,10 +245,13 @@
 
   function renderChannelHint() {
     const noChannel = !settings.pageAlerts && !settings.desktopAlerts;
+    const pageOnly = settings.pageAlerts && !settings.desktopAlerts;
     el.channelHint.textContent = noChannel
       ? 'Pick at least one channel, or nothing will be delivered.'
-      : '';
-    el.channelHint.classList.toggle('hint--warn', noChannel);
+      : pageOnly
+        ? 'On-page toasts only appear inside an open HLTV tab. Enable browser/desktop notifications for alerts when no HLTV page is open.'
+        : '';
+    el.channelHint.classList.toggle('hint--warn', noChannel || pageOnly);
   }
 
   function relativeTime(timestamp) {
@@ -460,7 +463,7 @@
         )
       );
       if (replies.some((reply) => reply && reply.ok)) delivered.push('on-page toast');
-      else failed.push('on-page toast (no HLTV tab open)');
+      else failed.push('on-page toast (requires an open HLTV tab)');
     }
 
     if (delivered.length === 0 && failed.length === 0) {

@@ -66,7 +66,9 @@ Click the toolbar icon to open the popup:
   otherwise exact, so `NAVI` will not match `NAVI Junior`. Teams followed from
   an HLTV profile link back to that profile from the popup.
 - **When to alert** — pick how far ahead of a match start you want warning, and
-  whether alerts arrive as on-page toasts, desktop notifications, or both.
+  whether alerts arrive as on-page toasts, browser/desktop notifications, or
+  both. An on-page toast is part of the HLTV page and therefore requires an
+  open HLTV tab; browser/desktop notifications can appear without one.
 - **Status** — when the last scan ran, how many matches were recognised, and
   whether the browser is actually allowing desktop notifications.
 - **Live stream** — whether to pop the stream open when a followed team goes
