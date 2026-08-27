@@ -4,6 +4,24 @@ Notable changes to Player & Match Tracker for HLTV are recorded here. Releases
 from 1.2.2 onward are maintained by Release Please from Conventional Commit
 messages. Earlier entries were reconstructed from the repository history.
 
+## [1.3.0](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/compare/v1.2.2...v1.3.0) (2026-08-27)
+
+
+### Features
+
+* add backup stream platform ([343bce9](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/commit/343bce9b6d92bbd83ea935982aee3a3ec1d35295))
+* link followed profiles to HLTV ([7c1fee3](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/commit/7c1fee32f02b8fa47cd6c8429a21b1ad7c758734))
+
+
+### Bug Fixes
+
+* clarify notification channel requirements ([2d240ad](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/commit/2d240adbe1e1e624b2d3b27db46062048e8c2886))
+
+
+### Continuous Integration
+
+* automate release history with Release Please ([cd1e164](https://github.com/realizedgamingtools/HLTVPlayerAndMatchTracker/commit/cd1e16417a5a10f0bc58c752d74de109fea6b3ed))
+
 ## [1.2.2] - 2026-08-24
 
 ### Changed
