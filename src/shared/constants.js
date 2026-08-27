@@ -88,6 +88,7 @@
       // Stream popup defaults. Per-match rules override these; see core/rules.js.
       openStream: false,
       streamPlatform: 'any',
+      streamFallbackPlatform: 'any',
       streamCountry: 'any'
     };
   };

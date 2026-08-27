@@ -58,6 +58,7 @@
       leadTimeMinutes: config.leadTimeMinutes,
       openStream: config.openStream,
       streamPlatform: config.streamPlatform,
+      streamFallbackPlatform: config.streamFallbackPlatform,
       streamCountry: config.streamCountry
     };
     const overrides = {};

@@ -24,6 +24,7 @@
     channelHint: document.getElementById('channel-hint'),
     openStream: document.getElementById('open-stream'),
     streamPlatform: document.getElementById('stream-platform'),
+    streamFallbackPlatform: document.getElementById('stream-fallback-platform'),
     streamCountry: document.getElementById('stream-country'),
     playerList: document.getElementById('player-list'),
     playerEmpty: document.getElementById('player-empty'),
@@ -59,8 +60,15 @@
       const item = document.createElement('li');
       item.className = 'team-list__item';
 
-      const name = document.createElement('span');
+      const profileUrl = HTA.teams.profileUrl(team);
+      const name = document.createElement(profileUrl ? 'a' : 'span');
       name.className = 'team-list__name';
+      if (profileUrl) {
+        name.href = profileUrl;
+        name.target = '_blank';
+        name.rel = 'noopener noreferrer';
+        name.title = `Open ${team.name} on HLTV`;
+      }
       const resolved = HTA.rules.resolveRule(settings, { team });
       const custom = resolved.overriddenFields.length;
       name.textContent = custom > 0 ? `${team.name} · ${custom} custom` : team.name;
@@ -117,6 +125,17 @@
       el.streamPlatform.appendChild(option);
     }
     el.streamPlatform.value = settings.streamPlatform || C.ANY;
+
+    el.streamFallbackPlatform.replaceChildren();
+    for (const [value, label] of [[C.ANY, 'Biggest available']].concat(
+      C.STREAM_PLATFORMS.map((p) => [p, C.PLATFORM_LABELS[p] || p])
+    )) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      el.streamFallbackPlatform.appendChild(option);
+    }
+    el.streamFallbackPlatform.value = settings.streamFallbackPlatform || C.ANY;
 
     el.streamCountry.replaceChildren();
     const pinned = new Set(
@@ -189,8 +208,15 @@
       const item = document.createElement('li');
       item.className = 'team-list__item';
 
-      const name = document.createElement('span');
+      const profileUrl = HTA.players.profileUrl(player);
+      const name = document.createElement(profileUrl ? 'a' : 'span');
       name.className = 'team-list__name';
+      if (profileUrl) {
+        name.href = profileUrl;
+        name.target = '_blank';
+        name.rel = 'noopener noreferrer';
+        name.title = `Open ${player.nickname} on HLTV`;
+      }
 
       const watching = [];
       if (player.alertOnMatch !== false && player.teamName) watching.push(player.teamName);
@@ -219,10 +245,13 @@
 
   function renderChannelHint() {
     const noChannel = !settings.pageAlerts && !settings.desktopAlerts;
+    const pageOnly = settings.pageAlerts && !settings.desktopAlerts;
     el.channelHint.textContent = noChannel
       ? 'Pick at least one channel, or nothing will be delivered.'
-      : '';
-    el.channelHint.classList.toggle('hint--warn', noChannel);
+      : pageOnly
+        ? 'On-page toasts only appear inside an open HLTV tab. Enable browser/desktop notifications for alerts when no HLTV page is open.'
+        : '';
+    el.channelHint.classList.toggle('hint--warn', noChannel || pageOnly);
   }
 
   function relativeTime(timestamp) {
@@ -328,6 +357,7 @@
 
   for (const [key, node] of [
     ['streamPlatform', el.streamPlatform],
+    ['streamFallbackPlatform', el.streamFallbackPlatform],
     ['streamCountry', el.streamCountry]
   ]) {
     node.addEventListener('change', async () => {
@@ -433,7 +463,7 @@
         )
       );
       if (replies.some((reply) => reply && reply.ok)) delivered.push('on-page toast');
-      else failed.push('on-page toast (no HLTV tab open)');
+      else failed.push('on-page toast (requires an open HLTV tab)');
     }
 
     if (delivered.length === 0 && failed.length === 0) {

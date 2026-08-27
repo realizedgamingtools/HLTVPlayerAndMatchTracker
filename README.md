@@ -63,15 +63,17 @@ Click the toolbar icon to open the popup:
 
 - **Followed teams** — add a team by its exact HLTV name (`Vitality`, not
   `Team Vitality`). Matching ignores case, padding and diacritics but is
-  otherwise exact, so `NAVI` will not match `NAVI Junior`.
+  otherwise exact, so `NAVI` will not match `NAVI Junior`. Teams followed from
+  an HLTV profile link back to that profile from the popup.
 - **When to alert** — pick how far ahead of a match start you want warning, and
-  whether alerts arrive as on-page toasts, desktop notifications, or both.
+  whether alerts arrive as on-page toasts, browser/desktop notifications, or
+  both. An on-page toast is part of the HLTV page and therefore requires an
+  open HLTV tab; browser/desktop notifications can appear without one.
 - **Status** — when the last scan ran, how many matches were recognised, and
   whether the browser is actually allowing desktop notifications.
 - **Live stream** — whether to pop the stream open when a followed team goes
-  live, and which platform and language to prefer. These are preferences, not
-  filters: if nobody is broadcasting on your pick, the biggest available stream
-  opens instead.
+  live, plus a preferred platform, backup platform, and language. If neither
+  platform is available, the biggest available stream opens instead.
 - **Scan now** — forces an immediate pass without waiting for the 30s interval.
 - **Send a test alert** — fires a synthetic alert down the real toast and
   notification paths, so you can confirm delivery works without waiting for a
@@ -95,6 +97,8 @@ with the channel in each entry's embed URL, so the same open tab that scans for
 matches also tells us who is live. Matching is on the channel rather than the
 displayed label, because HLTV shows names like `chopper` for a channel actually
 called `chopperinho`.
+
+Followed player names in the popup link back to their HLTV profiles.
 
 Alerts fire on the moment a stream comes online, not while it is online — a
 broadcast stays up for hours, and the latter would re-fire every scan. That
