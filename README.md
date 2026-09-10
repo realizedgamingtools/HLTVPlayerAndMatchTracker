@@ -71,8 +71,11 @@ Click the toolbar icon to open the popup:
   open HLTV tab; browser/desktop notifications can appear without one.
 - **Status** — when the last scan ran, how many matches were recognised, and
   whether the browser is actually allowing desktop notifications.
-- **Live stream** — whether to pop the stream open when a followed team goes
-  live, plus a preferred platform, backup platform, and language. If neither
+- **Live stream** — whether clicking a live desktop notification opens the
+  selected stream in a popup, plus a preferred platform, backup platform, and
+  language. With desktop alerts off, enabled stream popouts open automatically.
+  This also applies to followed players' own streams. Starting-soon notifications
+  and notifications with stream popouts disabled open their usual page. If neither
   platform is available, the biggest available stream opens instead.
 - **Scan now** — forces an immediate pass without waiting for the 30s interval.
 - **Send a test alert** — fires a synthetic alert down the real toast and

@@ -34,14 +34,14 @@
   }
 
   /**
-   * Open the match's stream in a popup window.
+   * Resolve the match's stream for automatic opening or a notification click.
    *
    * The stream list lives on the match page, but alerts almost always fire
    * from the matches list, which has none. So this reads the snapshot taken
    * when the user last visited the match page and falls back to HLTV's own
    * player when there is nothing cached.
    */
-  async function deliverStream(alert) {
+  async function resolveStreamTarget(alert) {
     const matchId = alert.match && alert.match.id;
     let streams = [];
     try {
@@ -57,14 +57,7 @@
       matchId,
       matchUrl: alert.match && alert.match.url
     });
-    if (!resolved.url) return;
-
-    chrome.runtime
-      .sendMessage({
-        type: C.MSG_OPEN_STREAM,
-        target: { matchId, url: resolved.url }
-      })
-      .catch(() => {});
+    return resolved.url ? { matchId, url: resolved.url } : null;
   }
 
   /**
@@ -117,6 +110,12 @@
         url
       };
 
+      const effective = HTA.rules.resolveRule(settings, { team: player });
+      const streamTarget = effective.openStream === true && url
+        ? { matchId: `player:${player.id || player.nickname}`, url }
+        : null;
+      if (settings.desktopAlerts && streamTarget) alert.streamTarget = streamTarget;
+
       if (settings.pageAlerts) HTA.notifier.showToast(alert);
       if (settings.desktopAlerts) {
         chrome.runtime.sendMessage({ type: C.MSG_DESKTOP_NOTIFY, alert }).catch(() => {});
@@ -124,12 +123,11 @@
 
       // A player's own stream honours their per-player setting, falling back to
       // the global one, so following someone does not force a window open.
-      const effective = HTA.rules.resolveRule(settings, { team: player });
-      if (effective.openStream === true && url) {
+      if (streamTarget && !settings.desktopAlerts) {
         chrome.runtime
           .sendMessage({
             type: C.MSG_OPEN_STREAM,
-            target: { matchId: `player:${player.id || player.nickname}`, url }
+            target: streamTarget
           })
           .catch(() => {});
       }
@@ -144,8 +142,9 @@
     if (alert.channels.page) {
       HTA.notifier.showToast(alert);
     }
-    if (alert.channels.stream) {
-      await deliverStream(alert);
+    const streamTarget = alert.channels.stream ? await resolveStreamTarget(alert) : null;
+    if (streamTarget && !alert.channels.desktop) {
+      chrome.runtime.sendMessage({ type: C.MSG_OPEN_STREAM, target: streamTarget }).catch(() => {});
     }
     if (alert.channels.desktop) {
       // The service worker owns chrome.notifications; a content script cannot
@@ -158,7 +157,8 @@
             title: alert.title,
             body: alert.body,
             status: alert.status,
-            url: alert.match && alert.match.url
+            url: alert.match && alert.match.url,
+            streamTarget
           }
         })
         .catch(() => {});

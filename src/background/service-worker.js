@@ -35,8 +35,9 @@ function notificationId(alertKey) {
 async function showDesktopNotification(alert) {
   const id = notificationId(alert.key);
 
-  if (alert.url) {
-    await HTA.storage.rememberNotificationTarget(id, alert.url);
+  if (alert.url || alert.streamTarget) {
+    await HTA.storage.rememberNotificationTarget(id,
+      alert.streamTarget ? { url: alert.url, streamTarget: alert.streamTarget } : alert.url);
   }
 
   await chrome.notifications.create(id, {
@@ -149,8 +150,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 /* ------------------------------------------------------------ notifications */
 
 chrome.notifications.onClicked.addListener(async (id) => {
-  const url = await HTA.storage.takeNotificationTarget(id);
-  if (url) await chrome.tabs.create({ url });
+  const target = await HTA.storage.takeNotificationTarget(id);
+  // Older notifications store a plain URL. Keep those clickable after an update.
+  if (target && typeof target === 'object' && target.streamTarget) {
+    await openStreamWindow(target.streamTarget);
+  } else {
+    const url = typeof target === 'string' ? target : target && target.url;
+    if (url) await chrome.tabs.create({ url });
+  }
   await chrome.notifications.clear(id);
 });
 

@@ -1025,3 +1025,8 @@ const passed = results.filter((r) => r.ok).length;
 console.log(`\n${passed}/${results.length} tests passed (${assertions} assertions)`);
 
 if (passed !== results.length) process.exit(1);
+
+const integration = require('node:child_process').spawnSync(
+  process.execPath, [path.join(__dirname, 'notification-click-tests.js')], { stdio: 'inherit' }
+);
+if (integration.status !== 0) process.exit(integration.status || 1);
